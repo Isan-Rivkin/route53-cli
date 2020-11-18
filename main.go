@@ -1,10 +1,11 @@
-package main 
+package main
 
 import (
 	"fmt"
 	u "r53/aws_utils"
 )
-func main(){
-	u.foo()
+
+func main() {
+	u.Foo()
 	fmt.Println("aws")
 }

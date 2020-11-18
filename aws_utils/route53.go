@@ -11,9 +11,10 @@ import (
 
 type ZoneID string
 
-func foo() int {
+func Foo() int {
 	return 1
 }
+
 func GetZones(sess *session.Session) ([]*route53.HostedZone, error) {
 	r53 := route53.New(sess)
 	r, err := r53.ListHostedZones(nil)
