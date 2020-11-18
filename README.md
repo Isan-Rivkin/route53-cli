@@ -2,6 +2,8 @@
 
 Command line utility for Route53. 
 
+Get info about your Route53 records from the Command line - quickly!
+
 # Use Cases
 
 ### Where does <some dns record> points to? 
