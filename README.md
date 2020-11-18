@@ -9,7 +9,7 @@ Command line utility for Route53.
 <b> Input </b>
 
 ```bash
-r53 *.foo.goo.website.com
+r53 -r '*.foo.goo.website.com'
 ``` 
 
 <b> Output </b>
