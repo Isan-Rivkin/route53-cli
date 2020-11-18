@@ -25,6 +25,17 @@ r53 -r '*.foo.goo.website.com'
 
 ```
 
+# Install 
+
+### Download Binary
+
+1. [from releases](https://github.com/Isan-Rivkin/route53-util/releases)
+
+2. move the binary to global dir and change name to r53:
+
+```bash
+mv route53-util r53 && mv r53 /usr/local/bin
+```
 ### How it works
 
 Example pseudocode: 
