@@ -75,7 +75,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&awsProfile, "profile", "p", "default", "~/.aws/credentials chosen account")
 	hostedZoneDepth = rootCmd.PersistentFlags().IntP("depth", "d", 0, "hosted zone depth to look at (default is recursive)")
 	recursiveSearch = rootCmd.PersistentFlags().BoolP("recursive", "", false, "recursive search by default is false expecting exact match on record")
-	debug = rootCmd.PersistentFlags().BoolP("debug", "", true, "debug output")
+	debug = rootCmd.PersistentFlags().BoolP("debug", "", false, "debug output")
 	if *debug == true {
 		log.SetLevel(log.DebugLevel)
 	}
