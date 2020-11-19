@@ -15,9 +15,12 @@ func (r *GetRecordAliasesResult) PrintTable() {
 func (r *GetRecordAliasesResult) printRecordsTable() {
 	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
 	t := table.NewWriter()
-
-	t.AppendHeader(table.Row{"Record", "Type", "TTL", "Alias", "Resources"}, rowConfigAutoMerge)
+	t.AppendHeader(table.Row{"Record", "Type", "TTL", "Country", "Alias", "Resources"}, rowConfigAutoMerge)
 	for _, recSet := range r.Records {
+		countryCode := ""
+		if recSet.GeoLocation != nil && recSet.GeoLocation.SubdivisionCode != nil {
+			countryCode = *recSet.GeoLocation.SubdivisionCode
+		}
 		dnsName := ""
 		if recSet.AliasTarget != nil && recSet.AliasTarget.DNSName != nil {
 			dnsName = *recSet.AliasTarget.DNSName
@@ -39,7 +42,7 @@ func (r *GetRecordAliasesResult) printRecordsTable() {
 				recordStr = strings.Replace(recordStr, WildCard, "*", 1)
 			}
 		}
-		t.AppendRow(table.Row{recordStr, *recSet.Type, ttl, dnsName, resourcesRow}, rowConfigAutoMerge)
+		t.AppendRow(table.Row{recordStr, *recSet.Type, ttl, countryCode, dnsName, resourcesRow}, rowConfigAutoMerge)
 		t.AppendSeparator()
 	}
 	t.SetAutoIndex(true)

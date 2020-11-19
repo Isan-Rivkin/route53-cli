@@ -32,7 +32,7 @@ var recordInput string
 var awsProfile string
 var hostedZoneDepth *int
 var recursiveSearch *bool
-var debug *bool
+var debug bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -40,16 +40,23 @@ var rootCmd = &cobra.Command{
 	Short: "Query for Route53",
 	Long:  `Query for Route53`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if debug == true {
+			log.SetLevel(log.DebugLevel)
+		}
+
 		if recordInput == "" {
+			log.Error("query must not be empty use -r `my.domain.com`")
 			return
 		}
 		api := awsu.NewRoute53Api()
 		result, err := api.GetRecordSetAliases(recordInput)
 		if err != nil {
 			log.WithError(err).Error("failed")
+			return
 		}
 		if result == nil {
 			log.Error("no result found")
+			return
 		}
 		result.PrintTable()
 	},
@@ -65,20 +72,15 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	//cobra.OnInitialize(initConfig)
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.r53.yaml)")
+	//rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.r53.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&recordInput, "r", "r", "", "-d *.foo.com")
 	rootCmd.PersistentFlags().StringVarP(&awsProfile, "profile", "p", "default", "~/.aws/credentials chosen account")
-	hostedZoneDepth = rootCmd.PersistentFlags().IntP("depth", "d", 0, "hosted zone depth to look at (default is recursive)")
-	recursiveSearch = rootCmd.PersistentFlags().BoolP("recursive", "", false, "recursive search by default is false expecting exact match on record")
-	debug = rootCmd.PersistentFlags().BoolP("debug", "", false, "debug output")
-	if *debug == true {
-		log.SetLevel(log.DebugLevel)
-	}
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "use with --debug")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

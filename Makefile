@@ -1,7 +1,12 @@
 RUN_CMD=go run main.go
 GOCMD=go
 GOFMT=$(GOCMD)fmt
-
+BIN_DIR='/usr/local/bin/r53'
+install:
+	go build main.go 
+	mv main r53
+	mv r53 $(BIN_DIR)
+	echo "Installed r53 to" $(BIN_DIR)
 run: 
 	${RUN_CMD}
 debug: 
