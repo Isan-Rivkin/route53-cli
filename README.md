@@ -4,6 +4,11 @@ Command line utility for Route53.
 
 Get info about your Route53 records from the Command line - quickly!
 
+Instead of: 
+Go to browser -> aws console -> login -> route53 -> find the hosted zone -> find the record 
+
+Just do 1 command from the cli :) 
+
 # Use Cases
 
 ### Where does <some dns record> points to? 
