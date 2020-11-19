@@ -37,6 +37,15 @@ r53 -r '*.foo.goo.website.com'
 cd <downloaded zip>
 mv r53 /usr/local/bin
 ```
+
+### Install from Source
+
+```bash
+git clone 
+cd route53-cli
+make install BIN_DIR='/path/to/target/bin/dir'
+```+
+
 ### How it works
 
 Example pseudocode: 
