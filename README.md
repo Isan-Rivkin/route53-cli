@@ -45,7 +45,7 @@ mv r53 /usr/local/bin
 git clone 
 cd route53-cli
 make install BIN_DIR='/path/to/target/bin/dir'
-```+
+```
 
 ### How it works
 
