@@ -11,7 +11,7 @@ Just do 1 command from the cli :)
 
 # Use Cases
 
-### Where does <some dns record> points to? 
+### Where does `example.com` points to in R53? 
 
 <b> Input </b>
 
