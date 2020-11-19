@@ -11,12 +11,12 @@ Just do 1 command from the cli :)
 
 # Use Cases
 
-### Where does `*.foo.goo.website.com` points to in R53? 
+### Where does `app.foo.goo.website.com` points to in R53? 
 
 <b> Input </b>
 
 ```bash
-r53 -r '*.foo.goo.website.com'
+r53 -r 'app.foo.goo.website.com'
 ``` 
 
 <b> Output </b>
