@@ -7,7 +7,6 @@ on:
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
-    binary_name: r53
     steps:
       - name: Checkout
         uses: actions/checkout@main

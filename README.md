@@ -35,6 +35,7 @@ r53 -r '*.foo.goo.website.com'
 
 ```bash
 cd <downloaded zip>
+mv route53-cli r53
 mv r53 /usr/local/bin
 ```
 
