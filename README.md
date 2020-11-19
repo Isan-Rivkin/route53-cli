@@ -34,7 +34,8 @@ r53 -r '*.foo.goo.website.com'
 2. move the binary to global dir and change name to r53:
 
 ```bash
-mv route53-cli r53 && mv r53 /usr/local/bin
+cd <downloaded zip>
+mv r53 /usr/local/bin
 ```
 ### How it works
 
