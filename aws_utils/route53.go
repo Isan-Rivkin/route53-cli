@@ -71,8 +71,6 @@ func (r *RecordName) GetAllOptionsForZoneName() ([]string, error) {
 	}
 	// *.a -> [a]
 	if size == 2 && r.hasWildCard {
-		{
-		}
 		return []string{r.splittedURL[size-1]}, nil
 	}
 	// a.b -> [a.b,  b]
