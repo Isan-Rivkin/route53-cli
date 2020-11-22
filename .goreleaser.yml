@@ -6,7 +6,8 @@ brews:
     tap:
       owner: isan-rivkin
       name: homebrew-route53-cli
-
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    
     # Template for the url which is determined by the given Token (github or gitlab)
     # Default for github is "https://github.com/<repo_owner>/<repo_name>/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     # url_template: "http://github.mycompany.com/foo/bar/releases/{{ .Tag }}/{{ .ArtifactName }}"
