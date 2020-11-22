@@ -32,6 +32,15 @@ r53 -r 'app.foo.goo.website.com'
 
 # Install 
 
+### Brew 
+
+MacOS (And ubuntu supported) installation via brew:
+
+```bash
+brew tap isan-rivkin/route53-cli
+brew install r53
+```
+
 ### Download Binary
 
 1. [from releases](https://github.com/Isan-Rivkin/route53-cli/releases)
@@ -39,8 +48,7 @@ r53 -r 'app.foo.goo.website.com'
 2. move the binary to global dir and change name to r53:
 
 ```bash
-cd <downloaded zip>
-mv route53-cli r53
+cd <downloaded zip dir>
 mv r53 /usr/local/bin
 ```
 
