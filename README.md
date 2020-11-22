@@ -1,6 +1,6 @@
 # Route53 Query 
 
-Command line utility for Route53. 
+CLI for Route53. 
 
 Get info about your Route53 records from the Command line - quickly!
 
