@@ -1,4 +1,6 @@
 # .goreleaser.yml
+builds: 
+  binary: r53
 brews:
   -
     name: r53
