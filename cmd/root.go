@@ -36,16 +36,17 @@ var debug bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "r53",
-	Short: "Query for Route53",
-	Long:  `Query for Route53`,
+	Use:   "r53 -r '*.some.dns.record.com'\n  r53 -r https://my.r53.website.com",
+	Short: "Query route53 to get your dns record values",
+	Long: `Query Route53 to get all sorts of information about a dns record. 
+r53 will use your default AWS credentials`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if debug == true {
 			log.SetLevel(log.DebugLevel)
 		}
 
 		if recordInput == "" {
-			log.Error("query must not be empty use -r `my.domain.com`")
+			log.Error("query must not be empty use --help")
 			return
 		}
 		api := awsu.NewRoute53Api()
@@ -78,13 +79,13 @@ func init() {
 	// will be global for your application.
 
 	//rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.r53.yaml)")
-	rootCmd.PersistentFlags().StringVarP(&recordInput, "r", "r", "", "-d *.foo.com")
-	rootCmd.PersistentFlags().StringVarP(&awsProfile, "profile", "p", "default", "~/.aws/credentials chosen account")
-	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "use with --debug")
+	rootCmd.PersistentFlags().StringVarP(&recordInput, "record", "r", "", "-r www.foo.app.com")
+	//rootCmd.PersistentFlags().StringVarP(&awsProfile, "profile", "p", "default", "~/.aws/credentials chosen account")
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Get verbose output about the process")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.
