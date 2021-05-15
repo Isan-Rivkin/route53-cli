@@ -34,6 +34,7 @@ var hostedZoneDepth *int
 var recursiveSearch *bool
 var debug bool
 var webUrl bool
+var skipNSVerification bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -51,7 +52,12 @@ r53 will use your default AWS credentials`,
 			return
 		}
 		api := awsu.NewRoute53Api()
-		result, err := api.GetRecordSetAliases(recordInput)
+
+		if skipNSVerification {
+			log.Warn("skipping nameserver verification, possibly inccorect result, not recomended.")
+		}
+
+		result, err := api.GetRecordSetAliases(recordInput, skipNSVerification)
 		if err != nil {
 			log.WithError(err).Error("failed")
 			return
@@ -87,7 +93,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Get verbose output about the process")
 	// add web urls
 	rootCmd.PersistentFlags().BoolVar(&webUrl, "url", true, "print url to the aws console that will display the resource")
-
+	rootCmd.PersistentFlags().BoolVar(&skipNSVerification, "ns-skip", false, "if set then nameservers will not be verified against the hosted zone result")
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")

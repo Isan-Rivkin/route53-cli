@@ -3,6 +3,7 @@ package aws_utils
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
 	"strings"
 
@@ -13,7 +14,8 @@ import (
 
 func NewRoute53Api() Route53Api {
 	return &Route53Manager{
-		session: GetEnvSession(),
+		session:     GetEnvSession(),
+		nameservers: map[string][]string{},
 	}
 }
 func NewRecordName(rawQuery string) (RecordStream, error) {
@@ -152,7 +154,32 @@ func StripRecord(fullRecord string) ([]string, error) {
 	return strings.Split(u.Hostname(), "."), nil
 }
 
-func (r53m *Route53Manager) GetRecordSetAliases(recordName string) (*GetRecordAliasesResult, error) {
+// gets hosted zone nameservers
+// gets record name nameservers (nslookup)
+// compares them
+func (r53m *Route53Manager) isNSMatchRecord(hosedZone *route53.HostedZone, recordName string) (bool, error) {
+	hns, err := r53m.GetHZNameservers(*hosedZone.Id)
+
+	if err != nil {
+		log.WithError(err).Error("failed getting hosted zone nameservers, abborting. to skip verification use flag --ns-skip")
+		return false, err
+	}
+
+	rns, err := r53m.GetNameservers(recordName)
+
+	if err != nil {
+		log.WithError(err).Error("failed getting domain address nameservers, abborting. to skip verification use flag --ns-skip")
+		return false, err
+	}
+
+	if !r53m.IsNSMatch(hns, rns) {
+		log.Info("record found in hosted zone but nameserver dont match, continuing search, to skip verification use flag --ns-skip")
+		return false, errors.New("ErrNoNSMatch")
+	}
+
+	return true, nil
+}
+func (r53m *Route53Manager) GetRecordSetAliases(recordName string, skipNSVerification bool) (*GetRecordAliasesResult, error) {
 	recordStream, err := NewRecordName(recordName)
 	if err != nil {
 		panic(err)
@@ -166,9 +193,16 @@ func (r53m *Route53Manager) GetRecordSetAliases(recordName string) (*GetRecordAl
 
 	for _, hzName := range optionalHostedZone {
 		hosedZone, recordSets, err := r53m.LookupRecord(hzName, recordName, recordStream)
+		// if record not found in current hosted zone
 		if err != nil || recordSets == nil {
 			log.WithField("hostedZoneTested", hzName).Debug("records not found in zone, checking next")
 			continue
+		}
+		// if record set found but have different nameservers uppon nslookup
+		if !skipNSVerification {
+			if match, err := r53m.isNSMatchRecord(hosedZone, recordName); err != nil || !match {
+				continue
+			}
 		}
 		return &GetRecordAliasesResult{Region: r53m.GetRegion(), Records: recordSets, HostedZone: hosedZone, Stream: recordStream}, nil
 	}
@@ -199,6 +233,7 @@ func (r53m *Route53Manager) LookupRecord(hzName, record string, recordName Recor
 	if err != nil || len(optionalHostedZones) == 0 {
 		return nil, nil, err
 	}
+
 	// check match in hosted zones
 	for _, hz := range optionalHostedZones {
 		if *hz.Name == hzName+"." {
@@ -253,4 +288,87 @@ func (r53m *Route53Manager) GetHostedZonesFromDns(recordName string) ([]*route53
 		return nil, err
 	}
 	return output.HostedZones, nil
+}
+
+// given a domain address do nslookup
+func (r53m *Route53Manager) GetNameservers(recordName string) ([]string, error) {
+
+	logger := log.WithField("recordName", recordName)
+
+	if val, exist := r53m.nameservers[recordName]; exist {
+		return val, nil
+	}
+
+	logger.Debug("performing domain address nameserver lookup")
+
+	nameserver, err := net.LookupNS(recordName + ".")
+
+	if err != nil {
+		return nil, err
+	}
+
+	var nsResult []string
+	for _, ns := range nameserver {
+		nsResult = append(nsResult, strings.TrimRight(ns.Host, "."))
+	}
+	log.WithField("ns", nsResult).Debug("found nameservers for domain address")
+	return nsResult, nil
+}
+
+// given hosted zone id find the nameservers
+func (r53m *Route53Manager) GetHZNameservers(hzId string) ([]string, error) {
+	hzId = strings.TrimLeft(hzId, "/hostedzone/")
+
+	logger := log.WithField("hostedZoneId", hzId)
+
+	if val, exist := r53m.nameservers[hzId]; exist {
+		return val, nil
+	}
+
+	logger.Debug("performing hosted zone nameserver lookup")
+
+	c := r53m.client()
+
+	i := &route53.GetHostedZoneInput{
+		Id: aws.String(hzId),
+	}
+
+	o, err := c.GetHostedZone(i)
+
+	if err != nil || o == nil || o.DelegationSet == nil {
+		return nil, err
+	}
+	var nsResult []string
+	for _, ns := range o.DelegationSet.NameServers {
+		nsResult = append(nsResult, strings.TrimRight(*ns, "."))
+	}
+	r53m.nameservers[hzId] = nsResult
+
+	log.WithField("ns", nsResult).Debug("found nameservers for hosted zone")
+
+	return nsResult, nil
+}
+
+func (r53m *Route53Manager) IsNSMatch(ns1, ns2 []string) bool {
+
+	nsCounter := map[string]int{}
+	for _, n := range ns1 {
+		if n != "" {
+			nsCounter[n] += 1
+		}
+	}
+	for _, n := range ns2 {
+		if n != "" {
+			nsCounter[n] += 1
+		}
+	}
+
+	for n, c := range nsCounter {
+		if c > 1 {
+			log.WithField("ns", n).Debug("found ns match")
+			return true
+		}
+	}
+
+	return false
 }
