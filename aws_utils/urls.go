@@ -32,8 +32,9 @@ const (
 var (
 	SupportedTarget = []string{ALBDns, CLBDns, NLBDns, ELBDns, S3Suffx, VPCEndpointDns, CloudFrontDns, ElasticBeansTalkDns, AcceleratorApiDns}
 	URLGenerators   = map[string]func(dnsIdentifier string, r *route53.ResourceRecordSet) string{
-		ALBDns: GetLBWebURL,
-		NLBDns: GetLBWebURL,
+		ALBDns:        GetLBWebURL,
+		NLBDns:        GetLBWebURL,
+		CloudFrontDns: GetCloudFrontWebURL,
 	}
 )
 
@@ -91,4 +92,11 @@ func GetLBWebURL(dnsIdentifier string, r *route53.ResourceRecordSet) string {
 		searchQuery = strings.TrimLeft(searchQuery, "dualstack.")
 	}
 	return fmt.Sprintf("https://console.aws.amazon.com/ec2/v2/home?region=%s#LoadBalancers:search=%s;sort=loadBalancerName", region, searchQuery)
+}
+
+// https://console.aws.amazon.com/cloudfront/home?region=us-west-2#
+// todo:: extract the record id and point to specific resource, cant search via url this is the general ui
+// the region doesn't matter it's global
+func GetCloudFrontWebURL(dnsIdentifier string, r *route53.ResourceRecordSet) string {
+	return fmt.Sprintf("https://console.aws.amazon.com/cloudfront/home?region=%s#", "us-east-1")
 }

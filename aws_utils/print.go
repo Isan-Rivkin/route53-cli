@@ -68,7 +68,7 @@ func (r *GetRecordAliasesResult) printRecordsTable(opts *PrintOptions) {
 	}
 	t.SetAutoIndex(true)
 	t.SetColumnConfigs([]table.ColumnConfig{
-		{Number: 1, AutoMerge: false},
+		{Number: 1, AutoMerge: true},
 		{Number: 2, AutoMerge: false},
 		{Number: 3, AutoMerge: false},
 		{Number: 4, AutoMerge: false},

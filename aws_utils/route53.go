@@ -22,6 +22,9 @@ func NewRecordName(rawQuery string) (RecordStream, error) {
 		return nil, err
 	}
 	log.WithField("parsedRecord", splitted).Debug("record value after strip")
+	if splitted[len(splitted)-1] == "" {
+		splitted = splitted[:len(splitted)-1]
+	}
 	return &RecordName{
 		rawURL:      rawQuery,
 		parsedURL:   strings.Join(splitted, "."),
