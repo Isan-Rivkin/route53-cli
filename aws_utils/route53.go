@@ -300,7 +300,7 @@ func (r53m *Route53Manager) GetNameservers(recordName string) ([]string, error) 
 	}
 
 	logger.Debug("performing domain address nameserver lookup")
-
+	here lookup is broken
 	nameserver, err := net.LookupNS(recordName + ".")
 
 	if err != nil {
