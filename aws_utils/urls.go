@@ -64,7 +64,7 @@ func GenerateWebURL(r *route53.ResourceRecordSet) (string, error) {
 	return "", e
 }
 
-// https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#LoadBalancers:search=web-prd-nomad-alb-ext-1356510359;sort=loadBalancerName
+// https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#LoadBalancers:search=some-alb-name;sort=loadBalancerName
 func GetLBWebURL(r *route53.ResourceRecordSet) string {
 	record := *r.AliasTarget.DNSName
 	record = strings.TrimRight(record, ".")
