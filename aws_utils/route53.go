@@ -21,6 +21,7 @@ func NewRecordName(rawQuery string) (RecordStream, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.WithField("parsedRecord", splitted).Debug("record value after strip")
 	return &RecordName{
 		rawURL:      rawQuery,
 		parsedURL:   strings.Join(splitted, "."),
@@ -106,12 +107,32 @@ func (r *RecordName) GetAllOptionsForZoneName() ([]string, error) {
 	return opts, nil
 }
 
+func (r53m *Route53Manager) GetRegion() string {
+	return *r53m.session.Config.Region
+}
+
 func (r53m *Route53Manager) client() *route53.Route53 {
 	if r53m.r53client == nil {
 		r53m.r53client = route53.New(r53m.session)
 		return r53m.r53client
 	}
 	return r53m.r53client
+}
+
+// works only for public zones
+func (r53 *Route53Manager) TestDNSAnswer(hostedZoneId, recordName, recordType string) (*route53.TestDNSAnswerOutput, error) {
+	zoneId := strings.TrimLeft(hostedZoneId, "/hostedzone/")
+	c := r53.client()
+	input := &route53.TestDNSAnswerInput{
+		RecordType:   aws.String(recordType),
+		RecordName:   aws.String(recordName),
+		HostedZoneId: aws.String(zoneId),
+	}
+	output, err := c.TestDNSAnswer(input)
+	if err != nil {
+		log.WithError(err).Error("failed checking dns anser for record")
+	}
+	return output, nil
 }
 
 // stripRecord
@@ -133,6 +154,7 @@ func (r53m *Route53Manager) GetRecordSetAliases(recordName string) (*GetRecordAl
 	if err != nil {
 		panic(err)
 	}
+	recordName = recordStream.GetParsedURL()
 	optionalHostedZone, err := recordStream.GetAllOptionsForZoneName()
 	if err != nil {
 		panic(err)
@@ -145,7 +167,7 @@ func (r53m *Route53Manager) GetRecordSetAliases(recordName string) (*GetRecordAl
 			log.WithField("hostedZoneTested", hzName).Debug("records not found in zone, checking next")
 			continue
 		}
-		return &GetRecordAliasesResult{Records: recordSets, HostedZone: hosedZone, Stream: recordStream}, nil
+		return &GetRecordAliasesResult{Region: r53m.GetRegion(), Records: recordSets, HostedZone: hosedZone, Stream: recordStream}, nil
 	}
 	return nil, errors.New("NoRecordMatchFound")
 }
@@ -204,6 +226,8 @@ func (r53m *Route53Manager) LookupRecord(hzName, record string, recordName Recor
 
 // getRecordAliases will return all record within a hosted zone that match the record name and also the rest
 func (r53m *Route53Manager) getRecordAliases(recordName, zoneId string) ([]*route53.ResourceRecordSet, error) {
+	log.WithField("recordName", recordName).Debug("listing resource sets in aws r53")
+
 	c := r53m.client()
 	input := &route53.ListResourceRecordSetsInput{
 		HostedZoneId:    aws.String(zoneId), // Required

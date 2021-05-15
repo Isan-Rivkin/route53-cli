@@ -38,7 +38,7 @@ r53 -r 'app.foo.goo.website.com'
 MacOS (And ubuntu supported) installation via brew:
 
 ```bash
-brew tap isan-rivkin/route53-cli
+brew tap isan-rivkin/toolbox
 brew install r53
 ```
 
