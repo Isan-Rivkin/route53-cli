@@ -31,7 +31,7 @@ const (
 
 var (
 	SupportedTarget = []string{ALBDns, CLBDns, NLBDns, ELBDns, S3Suffx, VPCEndpointDns, CloudFrontDns, ElasticBeansTalkDns, AcceleratorApiDns}
-	URLGenerators   = map[string]func(r *route53.ResourceRecordSet) string{
+	URLGenerators   = map[string]func(dnsIdentifier string, r *route53.ResourceRecordSet) string{
 		ALBDns: GetLBWebURL,
 		NLBDns: GetLBWebURL,
 	}
@@ -57,7 +57,7 @@ func GenerateWebURL(r *route53.ResourceRecordSet) (string, error) {
 	if dnsType, routable := CheckRoutableAWSTarget(r); routable {
 		g, found := URLGenerators[dnsType]
 		if found {
-			return g(r), nil
+			return g(dnsType, r), nil
 		}
 		e = errors.New("ErrNotSupportedGenerator")
 	}
@@ -65,24 +65,30 @@ func GenerateWebURL(r *route53.ResourceRecordSet) (string, error) {
 }
 
 // https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#LoadBalancers:search=some-alb-name;sort=loadBalancerName
-func GetLBWebURL(r *route53.ResourceRecordSet) string {
+func GetLBWebURL(dnsIdentifier string, r *route53.ResourceRecordSet) string {
 	record := *r.AliasTarget.DNSName
 	record = strings.TrimRight(record, ".")
 	log.Warn(r.Region)
 	region := *r.Region
 	searchQuery := record
-
 	// parse region
-
 	splitted := strings.Split(record, ".")
-	// .us-east-1.elb.amazonaws.com
-	if len(splitted) >= 4 {
-		region = splitted[len(splitted)-4]
-	}
 
+	if dnsIdentifier == ALBDns || dnsIdentifier == ELBDns {
+		// .us-east-1.elb.amazonaws.com
+		if len(splitted) >= 4 {
+			region = splitted[len(splitted)-4]
+		}
+
+	} else if dnsIdentifier == NLBDns {
+
+		// .elb.us-east-1.amazonaws.com
+		if len(splitted) >= 3 {
+			region = splitted[len(splitted)-3]
+		}
+	}
 	if strings.HasPrefix(searchQuery, "dualstack.") {
 		searchQuery = strings.TrimLeft(searchQuery, "dualstack.")
 	}
-
 	return fmt.Sprintf("https://console.aws.amazon.com/ec2/v2/home?region=%s#LoadBalancers:search=%s;sort=loadBalancerName", region, searchQuery)
 }
