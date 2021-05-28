@@ -1,22 +1,33 @@
 package aws_utils
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+	log "github.com/sirupsen/logrus"
 )
 
-func (r *GetRecordAliasesResult) PrintTable() {
-	r.printHostedzoneTable()
-	r.printRecordsTable()
+type PrintOptions struct {
+	WebURL bool
 }
 
-func (r *GetRecordAliasesResult) printRecordsTable() {
+func (r *GetRecordAliasesResult) PrintTable(opts *PrintOptions) {
+	r.printHostedzoneTable(opts)
+	r.printRecordsTable(opts)
+}
+
+func (r *GetRecordAliasesResult) printRecordsTable(opts *PrintOptions) {
 	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
 	t := table.NewWriter()
 	t.AppendHeader(table.Row{"Record", "Type", "TTL", "Country", "Alias", "Resources"}, rowConfigAutoMerge)
 	for _, recSet := range r.Records {
+
+		if recSet.Region == nil {
+			recSet.Region = &r.Region
+		}
+
 		countryCode := ""
 		if recSet.GeoLocation != nil && recSet.GeoLocation.SubdivisionCode != nil {
 			countryCode = *recSet.GeoLocation.SubdivisionCode
@@ -42,23 +53,33 @@ func (r *GetRecordAliasesResult) printRecordsTable() {
 				recordStr = strings.Replace(recordStr, WildCard, "*", 1)
 			}
 		}
+		// check if web url should be added
+		if opts != nil && opts.WebURL {
+
+			url, err := GenerateWebURL(recSet)
+			if err == nil {
+				dnsName += fmt.Sprintf("\n\n%s\n", url)
+			} else {
+				log.WithField("record", *recSet.Name).WithError(err).Debug("failed getting web url for record")
+			}
+		}
 		t.AppendRow(table.Row{recordStr, *recSet.Type, ttl, countryCode, dnsName, resourcesRow}, rowConfigAutoMerge)
 		t.AppendSeparator()
 	}
 	t.SetAutoIndex(true)
 	t.SetColumnConfigs([]table.ColumnConfig{
 		{Number: 1, AutoMerge: true},
-		{Number: 2, AutoMerge: true},
-		{Number: 3, AutoMerge: true},
-		{Number: 4, AutoMerge: true},
-		{Number: 5, AutoMerge: true},
+		{Number: 2, AutoMerge: false},
+		{Number: 3, AutoMerge: false},
+		{Number: 4, AutoMerge: false},
+		{Number: 5, AutoMerge: false},
 	})
 	t.SetStyle(table.StyleLight)
 	t.Style().Options.SeparateRows = true
 	t.SetOutputMirror(os.Stdout)
 	t.Render()
 }
-func (r *GetRecordAliasesResult) printHostedzoneTable() {
+func (r *GetRecordAliasesResult) printHostedzoneTable(opts *PrintOptions) {
 	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
 
 	t := table.NewWriter()

@@ -38,16 +38,23 @@ type GetRecordAliasesResult struct {
 	Records    []*route53.ResourceRecordSet
 	HostedZone *route53.HostedZone
 	Stream     RecordStream
+	Region     string
 }
 
 type Route53Api interface {
+	TestDNSAnswer(hostedZoneId, recordName, recordType string) (*route53.TestDNSAnswerOutput, error)
 	GetHostedZonesFromDns(recordName string) ([]*route53.HostedZone, error)
-	GetRecordSetAliases(recordName string) (*GetRecordAliasesResult, error)
+	GetRecordSetAliases(recordName string, skipNSVerification bool) (*GetRecordAliasesResult, error)
+	GetRegion() string
+	GetNameservers(recordName string) ([]string, error)
+	GetHZNameservers(hzId string) ([]string, error)
+	IsNSMatch(ns1, ns2 []string) bool
 }
 
 type Route53Manager struct {
-	session   *session.Session
-	r53client *route53.Route53
+	session     *session.Session
+	r53client   *route53.Route53
+	nameservers map[string][]string
 }
 
 type RecordStream interface {

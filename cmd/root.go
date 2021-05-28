@@ -33,6 +33,8 @@ var awsProfile string
 var hostedZoneDepth *int
 var recursiveSearch *bool
 var debug bool
+var webUrl bool
+var skipNSVerification bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -46,20 +48,27 @@ r53 will use your default AWS credentials`,
 		}
 
 		if recordInput == "" {
-			log.Error("query must not be empty use --help")
+			log.Error("query must not be empty use -r flag or --help")
 			return
 		}
 		api := awsu.NewRoute53Api()
-		result, err := api.GetRecordSetAliases(recordInput)
+
+		if skipNSVerification {
+			log.Warn("skipping nameserver verification, possibly inccorect result, not recomended.")
+		}
+
+		result, err := api.GetRecordSetAliases(recordInput, skipNSVerification)
 		if err != nil {
 			log.WithError(err).Error("failed")
 			return
 		}
+
 		if result == nil {
 			log.Error("no result found")
 			return
 		}
-		result.PrintTable()
+
+		result.PrintTable(&awsu.PrintOptions{WebURL: webUrl})
 	},
 }
 
@@ -82,7 +91,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&recordInput, "record", "r", "", "-r www.foo.app.com")
 	//rootCmd.PersistentFlags().StringVarP(&awsProfile, "profile", "p", "default", "~/.aws/credentials chosen account")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Get verbose output about the process")
-
+	// add web urls
+	rootCmd.PersistentFlags().BoolVar(&webUrl, "url", true, "print url to the aws console that will display the resource")
+	rootCmd.PersistentFlags().BoolVar(&skipNSVerification, "ns-skip", false, "if set then nameservers will not be verified against the hosted zone result")
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
