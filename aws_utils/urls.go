@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
-
 	"strings"
 
 	route53 "github.com/aws/aws-sdk-go/service/route53"
@@ -69,7 +67,7 @@ func GenerateWebURL(r *route53.ResourceRecordSet) (string, error) {
 func GetLBWebURL(dnsIdentifier string, r *route53.ResourceRecordSet) string {
 	record := *r.AliasTarget.DNSName
 	record = strings.TrimRight(record, ".")
-	log.Warn(r.Region)
+
 	region := *r.Region
 	searchQuery := record
 	// parse region
