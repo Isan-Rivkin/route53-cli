@@ -4,6 +4,11 @@ CLI for Route53.
 
 Get info about your Route53 records from the Command line - quickly!
 
+* Direct link to resource on AWS Console
+* Automatic verification of Nameservers against the real world
+* Recursive search for all results via `-R` flag
+
+
 Instead of: 
 Go to browser -> aws console -> login -> route53 -> find the hosted zone -> find the record 
 
@@ -23,11 +28,11 @@ r53 -r 'app.foo.goo.website.com'
 
 ```bash
 
-+---+--------+-----------------------+------------------------+
-| # | ZoneId | Record                | Target                 |
-+---+--------+-----------------------+------------------------+
-| 1 | ABC    | *.foo.goo.website.com | lb1.elb.amazonaws.com  |
-+---+--------+-----------------------|------------------------+
++---+--------+-----------------------|------------------------|----------------------------------------------+
+| # | ZoneId | Record                | Target                 | Console Link                                 |
++---+--------+-----------------------|------------------------|----------------------------------------------+
+| 1 | ABC    | *.foo.goo.website.com | lb1.elb.amazonaws.com  | https://console.aws.amazon.com/resource-link |
++---+--------+-----------------------|------------------------|----------------------------------------------+
 
 ```
 
