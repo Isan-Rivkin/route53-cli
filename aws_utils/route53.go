@@ -181,6 +181,71 @@ func (r53m *Route53Manager) isNSMatchRecord(hosedZone *route53.HostedZone, recor
 
 	return true, nil
 }
+func (r53m *Route53Manager) GetRecordSetAliasesRecursive(maxDepth int, recordName string, skipNSVerification bool, checkedRecord map[string]bool) ([]*GetRecordAliasesResult, error) {
+
+	lg := log.WithFields(log.Fields{
+		"currentDepth":   maxDepth,
+		"rootRecordName": recordName,
+	})
+
+	var allResults []*GetRecordAliasesResult
+
+	if maxDepth <= 0 {
+		return nil, nil
+	}
+
+	if checkedRecord == nil {
+		checkedRecord = map[string]bool{}
+	}
+
+	_, searched := checkedRecord[recordName]
+
+	if searched {
+		return nil, nil
+	}
+
+	res, err := r53m.GetRecordSetAliases(recordName, skipNSVerification)
+
+	checkedRecord[recordName] = true
+
+	if err != nil {
+		lg.WithError(err).Error("failed getting record set aliases")
+		return nil, err
+	}
+
+	allResults = append(allResults, res)
+
+	for _, record := range res.Records {
+
+		l := lg.WithField("calledRecord", *record.Name)
+
+		l.Debug("querying record set")
+
+		if record.AliasTarget == nil || record.AliasTarget.DNSName == nil {
+			continue
+		}
+
+		a := *record.AliasTarget.DNSName
+		a = strings.TrimSuffix(a, ".")
+
+		result, err := r53m.GetRecordSetAliasesRecursive(maxDepth-1, a, skipNSVerification, checkedRecord)
+
+		if err != nil {
+			l.WithError(err).Error("failed calling recurse record set on alias")
+			continue
+		}
+
+		// stop condition
+		if result == nil {
+			break
+		}
+
+		allResults = append(allResults, result...)
+
+	}
+
+	return allResults, nil
+}
 func (r53m *Route53Manager) GetRecordSetAliases(recordName string, skipNSVerification bool) (*GetRecordAliasesResult, error) {
 	recordStream, err := NewRecordName(recordName)
 	if err != nil {

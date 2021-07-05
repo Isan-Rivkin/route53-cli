@@ -45,6 +45,7 @@ type Route53Api interface {
 	TestDNSAnswer(hostedZoneId, recordName, recordType string) (*route53.TestDNSAnswerOutput, error)
 	GetHostedZonesFromDns(recordName string) ([]*route53.HostedZone, error)
 	GetRecordSetAliases(recordName string, skipNSVerification bool) (*GetRecordAliasesResult, error)
+	GetRecordSetAliasesRecursive(maxDepth int, recordName string, skipNSVerification bool, checkedRecord map[string]bool) ([]*GetRecordAliasesResult, error)
 	GetRegion() string
 	GetNameservers(recordName string) ([]string, error)
 	GetHZNameservers(hzId string) ([]string, error)
