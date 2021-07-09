@@ -181,7 +181,8 @@ func (r53m *Route53Manager) isNSMatchRecord(hosedZone *route53.HostedZone, recor
 
 	return true, nil
 }
-func (r53m *Route53Manager) GetRecordSetAliasesRecursive(maxDepth int, recordName string, skipNSVerification bool, checkedRecord map[string]bool) ([]*GetRecordAliasesResult, error) {
+
+func (r53m *Route53Manager) getRecordsRecursive(maxDepth int, recordName string, skipNSVerification bool, checkedRecord map[string]bool) ([]*GetRecordAliasesResult, error) {
 
 	lg := log.WithFields(log.Fields{
 		"currentDepth":   maxDepth,
@@ -209,7 +210,6 @@ func (r53m *Route53Manager) GetRecordSetAliasesRecursive(maxDepth int, recordNam
 	checkedRecord[recordName] = true
 
 	if err != nil {
-		lg.WithError(err).Error("failed getting record set aliases")
 		return nil, err
 	}
 
@@ -219,7 +219,7 @@ func (r53m *Route53Manager) GetRecordSetAliasesRecursive(maxDepth int, recordNam
 
 		l := lg.WithField("calledRecord", *record.Name)
 
-		l.Debug("querying record set")
+		l.Info("querying record set")
 
 		if record.AliasTarget == nil || record.AliasTarget.DNSName == nil {
 			continue
@@ -228,10 +228,10 @@ func (r53m *Route53Manager) GetRecordSetAliasesRecursive(maxDepth int, recordNam
 		a := *record.AliasTarget.DNSName
 		a = strings.TrimSuffix(a, ".")
 
-		result, err := r53m.GetRecordSetAliasesRecursive(maxDepth-1, a, skipNSVerification, checkedRecord)
+		result, err := r53m.getRecordsRecursive(maxDepth-1, a, skipNSVerification, checkedRecord)
 
 		if err != nil {
-			l.WithError(err).Error("failed calling recurse record set on alias")
+			l.WithError(err).Warn("stopping recurse record set on alias no results")
 			continue
 		}
 
@@ -246,6 +246,41 @@ func (r53m *Route53Manager) GetRecordSetAliasesRecursive(maxDepth int, recordNam
 
 	return allResults, nil
 }
+
+func (r53m *Route53Manager) mergeRecordAliasResultsHZs(results []*GetRecordAliasesResult) []*GetRecordAliasesResult {
+	seenHostedZone := map[string]bool{}
+	hzIdx := map[string]int{}
+
+	var merged []*GetRecordAliasesResult
+
+	for idx, r := range results {
+		hzId := *r.HostedZone.Id
+		if _, added := seenHostedZone[hzId]; !added {
+			seenHostedZone[hzId] = true
+			merged = append(merged, r)
+			hzIdx[hzId] = idx
+		} else {
+			merged[hzIdx[hzId]].Records = append(merged[hzIdx[hzId]].Records, r.Records...)
+		}
+	}
+	return merged
+}
+func (r53m *Route53Manager) GetRecordSetAliasesRecursive(maxDepth int, recordName string, skipNSVerification bool, checkedRecord map[string]bool) ([]*GetRecordAliasesResult, error) {
+
+	// get results recursivly
+	results, err := r53m.getRecordsRecursive(maxDepth, recordName, skipNSVerification, checkedRecord)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// merge the result sets if the hosted zone is the same s
+	merged := r53m.mergeRecordAliasResultsHZs(results)
+
+	return merged, nil
+
+}
+
 func (r53m *Route53Manager) GetRecordSetAliases(recordName string, skipNSVerification bool) (*GetRecordAliasesResult, error) {
 	recordStream, err := NewRecordName(recordName)
 	if err != nil {

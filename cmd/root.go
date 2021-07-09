@@ -30,7 +30,7 @@ import (
 var cfgFile string
 var recordInput string
 var awsProfile string
-var hostedZoneDepth *int
+var recusiveSearchMaxDepth *int
 var recursiveSearch *bool
 var debug bool
 var webUrl bool
@@ -43,6 +43,7 @@ var rootCmd = &cobra.Command{
 	Long: `Query Route53 to get all sorts of information about a dns record. 
 r53 will use your default AWS credentials`,
 	Run: func(cmd *cobra.Command, args []string) {
+
 		if debug {
 			log.SetLevel(log.DebugLevel)
 		}
@@ -51,56 +52,27 @@ r53 will use your default AWS credentials`,
 			log.Error("query must not be empty use -r flag or --help")
 			return
 		}
+
 		api := awsu.NewRoute53Api()
 
 		if skipNSVerification {
 			log.Warn("skipping nameserver verification, possibly inccorect result, not recomended.")
 		}
 
+		depth := *recusiveSearchMaxDepth
 		if !*recursiveSearch {
-			result, err := api.GetRecordSetAliases(recordInput, skipNSVerification)
-			if err != nil {
-				log.WithError(err).Error("failed")
-				return
-			}
+			depth = 1
+		}
 
-			if result == nil {
-				log.Error("no result found")
-				return
-			}
+		results, err := api.GetRecordSetAliasesRecursive(depth, recordInput, skipNSVerification, nil)
 
-			result.PrintTable(&awsu.PrintOptions{WebURL: webUrl})
-		} else {
+		if err != nil {
+			log.WithError(err).Error("failed")
+			return
+		}
 
-			log.Info("running recurse")
-
-			maxDepth := 3
-
-			results, err := api.GetRecordSetAliasesRecursive(maxDepth, recordInput, skipNSVerification, nil)
-
-			if err != nil {
-				log.WithError(err).Error("failed")
-				return
-			}
-
-			seenHostedZone := map[string]bool{}
-			hzIdx := map[string]int{}
-
-			var merged []*awsu.GetRecordAliasesResult
-
-			for idx, r := range results {
-				hzId := *r.HostedZone.Id
-				if _, added := seenHostedZone[hzId]; !added {
-					seenHostedZone[hzId] = true
-					merged = append(merged, r)
-					hzIdx[hzId] = idx
-				} else {
-					merged[hzIdx[hzId]].Records = append(merged[hzIdx[hzId]].Records, r.Records...)
-				}
-			}
-			for _, r := range merged {
-				r.PrintTable(&awsu.PrintOptions{WebURL: webUrl})
-			}
+		for _, r := range results {
+			r.PrintTable(&awsu.PrintOptions{WebURL: webUrl})
 		}
 	},
 }
@@ -130,6 +102,11 @@ func init() {
 	R := false
 	rootCmd.PersistentFlags().BoolVarP(&R, "recurse", "R", false, "if used then the tool will run recursively until all records have resolved")
 	recursiveSearch = &R
+
+	maxDepth := 3
+	rootCmd.PersistentFlags().IntVarP(&maxDepth, "max-depth", "d", maxDepth, "if -R is used then specifies when to stop recursive search depth")
+	recusiveSearchMaxDepth = &maxDepth
+
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
