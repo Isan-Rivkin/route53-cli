@@ -19,12 +19,17 @@ import (
 	"fmt"
 	"os"
 	awsu "r53/aws_utils"
+	"runtime"
 
 	"github.com/spf13/cobra"
 
 	homedir "github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+)
+
+const (
+	AppVersion = "0.1.0"
 )
 
 var cfgFile string
@@ -43,38 +48,44 @@ var rootCmd = &cobra.Command{
 	Long: `Query Route53 to get all sorts of information about a dns record. 
 r53 will use your default AWS credentials`,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		if debug {
-			log.SetLevel(log.DebugLevel)
-		}
-
-		if recordInput == "" {
-			log.Error("query must not be empty use -r flag or --help")
-			return
-		}
-
-		api := awsu.NewRoute53Api()
-
-		if skipNSVerification {
-			log.Warn("skipping nameserver verification, possibly inccorect result, not recomended.")
-		}
-
-		depth := *recusiveSearchMaxDepth
-		if !*recursiveSearch {
-			depth = 1
-		}
-
-		results, err := api.GetRecordSetAliasesRecursive(depth, recordInput, skipNSVerification, nil)
-
-		if err != nil {
-			log.WithError(err).Error("failed")
-			return
-		}
-
-		for _, r := range results {
-			r.PrintTable(&awsu.PrintOptions{WebURL: webUrl})
-		}
+		ExecuteR53()
 	},
+}
+
+func ExecuteR53() {
+
+	_ = runtime.GOOS
+
+	if debug {
+		log.SetLevel(log.DebugLevel)
+	}
+
+	if recordInput == "" {
+		log.Error("query must not be empty use -r flag or --help")
+		return
+	}
+
+	api := awsu.NewRoute53Api()
+
+	if skipNSVerification {
+		log.Warn("skipping nameserver verification, possibly inccorect result, not recomended.")
+	}
+
+	depth := *recusiveSearchMaxDepth
+	if !*recursiveSearch {
+		depth = 1
+	}
+
+	results, err := api.GetRecordSetAliasesRecursive(depth, recordInput, skipNSVerification, nil)
+
+	if err != nil {
+		log.WithError(err).Error("failed")
+		return
+	}
+
+	for _, r := range results {
+		r.PrintTable(&awsu.PrintOptions{WebURL: webUrl})
+	}
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
