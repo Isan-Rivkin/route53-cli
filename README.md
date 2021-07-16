@@ -1,38 +1,48 @@
 # Route53 Query 
 
-CLI for Route53. 
+Move fast with custom CLI for Route53. 
 
 Get info about your Route53 records from the Command line - quickly!
 
 * Direct link to resource on AWS Console
 * Automatic verification of Nameservers against the real world
 * Recursive search for all results via `-R` flag
+* Supports any `~/.aws/credentials` profile
 
 
-Instead of: 
+## The problem
+
+Ever wondered "What records are behind this R53 record I have?" 
+
+i.e  Where does `app.foo.goo.website.com` points to in R53?  
+
+## Without `route53-cli`: 
+
 Go to browser -> aws console -> login -> route53 -> find the hosted zone -> find the record 
 
-Just do 1 command from the cli :) 
-
-# Use Cases
-
-### Where does `app.foo.goo.website.com` points to in R53? 
+## With `route53-cli`:
 
 <b> Input </b>
 
 ```bash
-r53 -r 'app.foo.goo.website.com'
+r53 -R -r 'app.foo.goo.website.com'
 ``` 
 
 <b> Output </b>
 
 ```bash
 
-+---+--------+-----------------------|------------------------|----------------------------------------------+
-| # | ZoneId | Record                | Target                 | Console Link                                 |
-+---+--------+-----------------------|------------------------|----------------------------------------------+
-| 1 | ABC    | *.foo.goo.website.com | lb1.elb.amazonaws.com  | https://console.aws.amazon.com/resource-link |
-+---+--------+-----------------------|------------------------|----------------------------------------------+
++---+-----------------------|------------------------|--------------------------------------|---------+
+| # | Record                | Target                 | Console Link                         | TYPE    |
++---+-----------------------|------------------------|--------------------------------------|---------+
+| 1 | *.foo.goo.website.com | r-re1.similarweb.com.  |                                      | A       |
++---+-----------------------|------------------------|--------------------------------------|---------+
+| 2 | *.foo.goo.website.com | r-re2.similarweb.com.  |                                      | A       |
++---+-----------------------|------------------------|--------------------------------------|---------+
+| 3 | r-re1.similarweb.com. | lb1.elb.amazonaws.com  | https://console.aws.amazon.com/alb-1 | A       |
++---+-----------------------|------------------------|--------------------------------------|---------+
+| 4 | r-re2.similarweb.com. | lb2.elb.amazonaws.com  | https://console.aws.amazon.com/alb-2 | A       |
++---+-----------------------|------------------------|------------------------------------------------+
 
 ```
 
@@ -66,7 +76,20 @@ cd route53-cli
 make install BIN_DIR='/path/to/target/bin/dir'
 ```
 
-### How it works
+### Version Check 
+
+The CLI will query anonymously a remote version server to check if the current version of the cli is updated.
+If the current client version indeed outdated the server will return instructions for update. 
+
+The server will add the request to a hit counter stored internaly for usage metrics. 
+
+<b>None of the user query are passed to the server, only OS type and version</b>
+
+<b> The route53 querys themselves are done directly via the AWS Api.</b>
+
+This behaviour is on by default and can be optouted out via setting the envrionment variable `R53_VERSION_CHECK=false`. 
+
+### How it works 
 
 Example pseudocode: 
 
