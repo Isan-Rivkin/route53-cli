@@ -12,9 +12,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func NewRoute53Api() Route53Api {
+func NewRoute53Api(profile string) Route53Api {
 	return &Route53Manager{
-		session:     GetEnvSession(),
+		session:     GetEnvSession(profile),
 		nameservers: map[string][]string{},
 	}
 }

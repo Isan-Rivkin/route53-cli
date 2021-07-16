@@ -19,17 +19,16 @@ import (
 	"fmt"
 	"os"
 	awsu "r53/aws_utils"
-	"runtime"
 
-	"github.com/spf13/cobra"
-
+	v "github.com/isan-rivkin/cliversioner"
 	homedir "github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 const (
-	AppVersion = "0.1.0"
+	AppVersion = "0.3.0"
 )
 
 var cfgFile string
@@ -49,12 +48,24 @@ var rootCmd = &cobra.Command{
 r53 will use your default AWS credentials`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ExecuteR53()
+		VersionCheck()
 	},
 }
 
-func ExecuteR53() {
+func VersionCheck() {
 
-	_ = runtime.GOOS
+	optoutVar := "R53_VERSION_CHECK"
+	i := v.NewInput("route53-cli", "http://localhost:3000", AppVersion, &optoutVar)
+	if out, err := v.CheckVersion(i); err == nil {
+		if out.Outdated {
+			m := fmt.Sprintf("%s is not latest, %s, upgrade to %s", out.CurrentVersion, out.Message, out.LatestVersion)
+			log.Warn(m)
+		}
+	}
+
+}
+
+func ExecuteR53() {
 
 	if debug {
 		log.SetLevel(log.DebugLevel)
@@ -65,7 +76,9 @@ func ExecuteR53() {
 		return
 	}
 
-	api := awsu.NewRoute53Api()
+	log.WithField("profile", awsProfile).Info("using aws environment session")
+
+	api := awsu.NewRoute53Api(awsProfile)
 
 	if skipNSVerification {
 		log.Warn("skipping nameserver verification, possibly inccorect result, not recomended.")
@@ -105,7 +118,7 @@ func init() {
 
 	//rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.r53.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&recordInput, "record", "r", "", "-r www.foo.app.com")
-	//rootCmd.PersistentFlags().StringVarP(&awsProfile, "profile", "p", "default", "~/.aws/credentials chosen account")
+	rootCmd.PersistentFlags().StringVarP(&awsProfile, "profile", "p", "default", "~/.aws/credentials chosen account")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Get verbose output about the process")
 	// add web urls
 	rootCmd.PersistentFlags().BoolVar(&webUrl, "url", true, "print url to the aws console that will display the resource")
