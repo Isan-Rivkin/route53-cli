@@ -42,16 +42,22 @@ r53 -R -r 'app.foo.goo.website.com'
 
 ```bash
 
+┌─────────────────┬────────────────────────────┬───────────────┬─────────┐
+│ HOSTED ZONE     │ ID                         │ TOTAL RECORDS │ PRIVATE │
+├─────────────────┼────────────────────────────┼───────────────┼─────────┤
+│ website.com.    │ /hostedzone/ABFDCEWQSFDSFD │           127 │ false   │
+└─────────────────┴────────────────────────────┴───────────────┴─────────┘
+
 +---+-----------------------|------------------------|--------------------------------------|---------+
 | # | Record                | Target                 | Console Link                         | TYPE    |
 +---+-----------------------|------------------------|--------------------------------------|---------+
-| 1 | *.foo.goo.website.com | r-re1.similarweb.com.  |                                      | A       |
+| 1 | *.foo.goo.website.com | r-re1.website.com.     |                                      | A       |
 +---+-----------------------|------------------------|--------------------------------------|---------+
-| 2 | *.foo.goo.website.com | r-re2.similarweb.com.  |                                      | A       |
+| 2 | *.foo.goo.website.com | r-re2.website.com.     |                                      | A       |
 +---+-----------------------|------------------------|--------------------------------------|---------+
-| 3 | r-re1.similarweb.com. | lb1.elb.amazonaws.com  | https://console.aws.amazon.com/alb-1 | A       |
+| 3 | r-re1.website.com.    | lb1.elb.amazonaws.com  | https://console.aws.amazon.com/alb-1 | A       |
 +---+-----------------------|------------------------|--------------------------------------|---------+
-| 4 | r-re2.similarweb.com. | lb2.elb.amazonaws.com  | https://console.aws.amazon.com/alb-2 | A       |
+| 4 | r-re2.website.com.    | lb2.elb.amazonaws.com  | https://console.aws.amazon.com/alb-2 | A       |
 +---+-----------------------|------------------------|------------------------------------------------+
 
 ```
