@@ -8,6 +8,7 @@ Get info about your Route53 records from the Command line - quickly!
 * Automatic verification of Nameservers against the real world
 * Recursive search for all results via `-R` flag
 * Supports any `~/.aws/credentials` profile
+* Works directly against AWS Api.
 
 
 ## The problem
@@ -19,6 +20,15 @@ i.e  Where does `app.foo.goo.website.com` points to in R53?
 ## Without `route53-cli`: 
 
 Go to browser -> aws console -> login -> route53 -> find the hosted zone -> find the record 
+
+<b> Even if you find the record in the AWS console you can't be sure this is the source of truth since the record could be defined in multiple route 53 hosted zones of the organization. The only way to verify is by comparing the Nameservers in the real world.</b>
+
+## The solution 
+
+- The cli will use the default AWS login methods and query the route53 api in a smart way to find the record. 
+- By default the nameservers will be verified against the real world via Dig implementation (turn off via `--skip-ns`)
+- By using `-R` the query will continue recursivly and expand all the records until the "leaf"
+- If the record value is an AWS resource it will output the URL to AWS console for quick access.
 
 ## With `route53-cli`:
 
