@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	AppVersion = "0.1.1"
+	AppVersion = "0.3.0"
 )
 
 var cfgFile string
@@ -42,8 +42,9 @@ var skipNSVerification bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "r53 -r '*.some.dns.record.com'\n  r53 -r https://my.r53.website.com",
-	Short: "Query route53 to get your dns record values",
+	Use:     "r53 -r '*.some.dns.record.com'\n  r53 -r https://my.r53.website.com",
+	Version: AppVersion,
+	Short:   "Query route53 to get your dns record values",
 	Long: `Query Route53 to get all sorts of information about a dns record. 
 r53 will use your default AWS credentials`,
 	Run: func(cmd *cobra.Command, args []string) {
