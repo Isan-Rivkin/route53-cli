@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	AppVersion = "0.3.0"
+	AppVersion = "0.1.1"
 )
 
 var cfgFile string
@@ -55,7 +55,7 @@ r53 will use your default AWS credentials`,
 func VersionCheck() {
 
 	optoutVar := "R53_VERSION_CHECK"
-	i := v.NewInput("route53-cli", "http://localhost:3000", AppVersion, &optoutVar)
+	i := v.NewInput("route53-cli", "https://looperly.co", AppVersion, &optoutVar)
 	if out, err := v.CheckVersion(i); err == nil {
 		if out.Outdated {
 			m := fmt.Sprintf("%s is not latest, %s, upgrade to %s", out.CurrentVersion, out.Message, out.LatestVersion)
