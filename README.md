@@ -1,33 +1,64 @@
 # Route53 Query 
 
-CLI for Route53. 
+Move fast with custom CLI for Route53. 
 
 Get info about your Route53 records from the Command line - quickly!
 
-Instead of: 
+* Direct link to resource on AWS Console
+* Automatic verification of Nameservers against the real world
+* Recursive search for all results via `-R` flag
+* Supports any `~/.aws/credentials` profile
+* Works directly against AWS Api.
+
+
+## The problem
+
+Ever wondered "What records are behind this R53 record I have?" 
+
+i.e  Where does `app.foo.goo.website.com` points to in R53?  
+
+## Without `route53-cli`: 
+
 Go to browser -> aws console -> login -> route53 -> find the hosted zone -> find the record 
 
-Just do 1 command from the cli :) 
+<b> Even if you find the record in the AWS console you can't be sure this is the source of truth since the record could be defined in multiple route 53 hosted zones of the organization. The only way to verify is by comparing the Nameservers in the real world.</b>
 
-# Use Cases
+## The solution 
 
-### Where does `app.foo.goo.website.com` points to in R53? 
+- The cli will use the default AWS login methods and query the route53 api in a smart way to find the record. 
+- By default the nameservers will be verified against the real world via Dig implementation (turn off via `--skip-ns`)
+- By using `-R` the query will continue recursivly and expand all the records until the "leaf"
+- If the record value is an AWS resource it will output the URL to AWS console for quick access.
+
+## With `route53-cli`:
 
 <b> Input </b>
 
 ```bash
-r53 -r 'app.foo.goo.website.com'
+r53 -R -r 'app.foo.goo.website.com'
 ``` 
 
 <b> Output </b>
 
 ```bash
 
-+---+--------+-----------------------+------------------------+
-| # | ZoneId | Record                | Target                 |
-+---+--------+-----------------------+------------------------+
-| 1 | ABC    | *.foo.goo.website.com | lb1.elb.amazonaws.com  |
-+---+--------+-----------------------|------------------------+
+┌─────────────────┬────────────────────────────┬───────────────┬─────────┐
+│ HOSTED ZONE     │ ID                         │ TOTAL RECORDS │ PRIVATE │
+├─────────────────┼────────────────────────────┼───────────────┼─────────┤
+│ website.com.    │ /hostedzone/ABFDCEWQSFDSFD │           127 │ false   │
+└─────────────────┴────────────────────────────┴───────────────┴─────────┘
+
++---+-----------------------|------------------------|--------------------------------------|---------+
+| # | Record                | Target                 | Console Link                         | TYPE    |
++---+-----------------------|------------------------|--------------------------------------|---------+
+| 1 | *.foo.goo.website.com | r-re1.website.com.     |                                      | A       |
++---+-----------------------|------------------------|--------------------------------------|---------+
+| 2 | *.foo.goo.website.com | r-re2.website.com.     |                                      | A       |
++---+-----------------------|------------------------|--------------------------------------|---------+
+| 3 | r-re1.website.com.    | lb1.elb.amazonaws.com  | https://console.aws.amazon.com/alb-1 | A       |
++---+-----------------------|------------------------|--------------------------------------|---------+
+| 4 | r-re2.website.com.    | lb2.elb.amazonaws.com  | https://console.aws.amazon.com/alb-2 | A       |
++---+-----------------------|------------------------|------------------------------------------------+
 
 ```
 
@@ -61,7 +92,20 @@ cd route53-cli
 make install BIN_DIR='/path/to/target/bin/dir'
 ```
 
-### How it works
+### Version Check 
+
+The CLI will query anonymously a remote version server to check if the current version of the cli is updated.
+If the current client version indeed outdated the server will return instructions for update. 
+
+The server will add the request to a hit counter stored internaly for usage metrics. 
+
+<b>None of the user query are passed to the server, only OS type and version</b>
+
+<b> The route53 querys themselves are done directly via the AWS Api.</b>
+
+This behaviour is on by default and can be optouted out via setting the envrionment variable `R53_VERSION_CHECK=false`. 
+
+### How it works 
 
 Example pseudocode: 
 
