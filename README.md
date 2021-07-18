@@ -4,41 +4,41 @@ Move fast with custom CLI for Route53.
 
 Get info about your Route53 records from the Command line - quickly!
 
-* Direct link to resource on AWS Console
-* Automatic verification of Nameservers against the real world
-* Recursive search for all results via `-R` flag
-* Supports any `~/.aws/credentials` profile
-* Works directly against AWS Api.
+* Direct link to resource on AWS Console.
+* Automatic verification of Nameservers against the real world.
+* Recursive search for all results via `-R` flag.
+* Supports any `~/.aws/credentials` profile.
+* Works directly against AWS API.
 
 
-## The problem
+## The Problem
 
-Ever wondered "What records are behind this R53 record I have?" 
+Ever wondered "what records are behind this R53 record I have?" 
 
 i.e  Where does `app.foo.goo.website.com` points to in R53?  
 
 ## Without `route53-cli`: 
 
-Go to browser -> aws console -> login -> route53 -> find the hosted zone -> find the record 
+Go to browser -> AWS console -> login -> Route53 -> find the hosted zone -> find the record 
 
-<b> Even if you find the record in the AWS console you can't be sure this is the source of truth since the record could be defined in multiple route 53 hosted zones of the organization. The only way to verify is by comparing the Nameservers in the real world.</b>
+**Even if you find the record in the AWS console you can't be sure this is the source of truth since the record could be defined in multiple route 53 hosted zones of the organization. The only way to verify is by comparing the Nameservers in the real world.**
 
 ## The solution 
 
-- The cli will use the default AWS login methods and query the route53 api in a smart way to find the record. 
-- By default the nameservers will be verified against the real world via Dig implementation (turn off via `--skip-ns`)
-- By using `-R` the query will continue recursivly and expand all the records until the "leaf"
+- The CLI will use the default AWS login methods and query the Route53 API in a smart way to find the record. 
+- By default the nameservers will be verified against the real world via Dig implementation (turn off via `--skip-ns`).
+- By using `-R` the query will continue recursivly and expand all the records until the "leaf".
 - If the record value is an AWS resource it will output the URL to AWS console for quick access.
 
 ## With `route53-cli`:
 
-<b> Input </b>
+**Input**
 
 ```bash
 r53 -R -r 'app.foo.goo.website.com'
 ``` 
 
-<b> Output </b>
+**Output**
 
 ```bash
 
@@ -66,7 +66,7 @@ r53 -R -r 'app.foo.goo.website.com'
 
 ### Brew 
 
-MacOS (And ubuntu supported) installation via brew:
+MacOS (and ubuntu supported) installation via Brew:
 
 ```bash
 brew tap isan-rivkin/toolbox
@@ -77,7 +77,7 @@ brew install r53
 
 1. [from releases](https://github.com/Isan-Rivkin/route53-cli/releases)
 
-2. move the binary to global dir and change name to r53:
+2. Move the binary to global dir and change name to `r53`:
 
 ```bash
 cd <downloaded zip dir>
@@ -94,14 +94,14 @@ make install BIN_DIR='/path/to/target/bin/dir'
 
 ### Version Check 
 
-The CLI will query anonymously a remote version server to check if the current version of the cli is updated.
+The CLI will query anonymously a remote version server to check if the current version of the CLI is updated.
 If the current client version indeed outdated the server will return instructions for update. 
 
 The server will add the request to a hit counter stored internaly for usage metrics. 
 
-<b>None of the user query are passed to the server, only OS type and version</b>
+**None of the user query are passed to the server, only OS type and version.**
 
-<b> The route53 querys themselves are done directly via the AWS Api.</b>
+**The route53 querys themselves are done directly via the AWS Api.**
 
 This behaviour is on by default and can be optouted out via setting the envrionment variable `R53_VERSION_CHECK=false`. 
 
