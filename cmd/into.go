@@ -19,6 +19,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
+	ui "r53/cliui"
 )
 
 // intoCmd represents the into command
@@ -33,6 +35,11 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("into called")
+		s, err := ui.SelectInstanceFromList([]string{"opt1", "opt2"})
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("selection = ", s)
 	},
 }
 
