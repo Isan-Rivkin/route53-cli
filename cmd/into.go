@@ -18,6 +18,7 @@ package cmd
 import (
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	ui "r53/cliui"
@@ -34,12 +35,27 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("into called")
-		s, err := ui.SelectInstanceFromList([]string{"opt1", "opt2"})
+		defaultDepth := 3
+		result, err := GetR53Query(defaultDepth)
+
+		if err != nil {
+			log.WithError(err).Error("failed, potentially not authorized with aws")
+			return
+		}
+
+		if len(result) != 1 {
+			log.Error(fmt.Errorf("there is %d, only 1 hosted zone in the result sets is currently supported", len(result)))
+			return
+		}
+
+		s, err := ui.SelectR53RecordFromList(result[0])
+
 		if err != nil {
 			panic(err)
 		}
 		fmt.Println("selection = ", s)
+
+		VersionCheck()
 	},
 }
 
