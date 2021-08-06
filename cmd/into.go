@@ -48,14 +48,15 @@ to quickly create a Cobra application.`,
 			return
 		}
 
-		s, err := ui.SelectR53RecordFromList(result[0])
+		app := ui.NewR53App()
+
+		app.SetR53RecordsQueryResult(result[0])
+		err = app.Run()
 
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("selection = ", s)
 
-		VersionCheck()
 	},
 }
 

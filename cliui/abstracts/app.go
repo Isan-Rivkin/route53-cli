@@ -18,6 +18,7 @@ func DefaultOpts() *AppOptions {
 }
 
 type App interface {
+	SetRootGrid(rootGrid *tview.Grid)
 	Render() error
 }
 
@@ -32,6 +33,26 @@ func NewApp() App {
 	}
 }
 
+func getDummyTable() *tview.Table {
+	// parse table
+	table := NewTable()
+	cols := []string{"AAA", "BNBB", "CCC", "DDDDD"}
+	table.AddHeaders(cols)
+
+	for rowIdx := 0; rowIdx < 20; rowIdx++ {
+
+		for colIdx, c := range cols {
+			table.AddRow(rowIdx+1, colIdx, fmt.Sprintf("dummy=%s,%d,%d", c, rowIdx, colIdx))
+		}
+	}
+
+	table.AddSelectionCallBack(func(tsr *TableSelectionResult) {
+		log.Info("Selected Item got, exiting!", *tsr)
+	})
+
+	tableItem := table.Render()
+	return tableItem
+}
 func (a *DefaultApp) renderSimpleGrid() *tview.Grid {
 	//appGrid := tview.NewGrid().SetBorders(true) //.AddItem(tp.table, 0, 0, 1, 3, 0, 0, true)
 	header := NewLabeledText(&LabeledTextViewInput{
@@ -73,17 +94,17 @@ func (a *DefaultApp) renderSimpleGrid() *tview.Grid {
 	cols := []string{"Col1", "Col2", "Col3"}
 	table.AddHeaders(cols)
 
-	for rowIdx := 0; rowIdx < 20; rowIdx++ {
-		
+	for rowIdx := 0; rowIdx < 250; rowIdx++ {
+
 		for colIdx, c := range cols {
 			table.AddRow(rowIdx+1, colIdx, fmt.Sprintf("val=%s,%d,%d", c, rowIdx, colIdx))
 		}
 	}
-
-	tableItem := table.Render(func(tsr *TableSelectionResult) {
+	table.AddSelectionCallBack(func(tsr *TableSelectionResult) {
 		log.Info("Selected Item got, exiting!", *tsr)
 		a.app.Stop()
 	})
+	tableItem := table.Render()
 
 	// render grid
 	grid := tview.NewGrid().
@@ -97,11 +118,25 @@ func (a *DefaultApp) renderSimpleGrid() *tview.Grid {
 	return grid
 }
 
+func (a *DefaultApp) SetRootGrid(rootGrid *tview.Grid) {
+	a.app.SetRoot(rootGrid, true)
+}
+
 func (a *DefaultApp) Render() error {
 
-	appGrid := a.renderSimpleGrid()
+	//appGrid := a.renderSimpleGrid()
 
-	if err := a.app.SetRoot(appGrid, true).Run(); err != nil {
+	// example: update dynamically the ui by expanding the grid and adding another table
+	// go func() {
+	// 	time.Sleep(time.Second * 3)
+	// 	a.app.QueueUpdateDraw(func() {
+	// 		appGrid.SetRows(10, 0, 0)
+	// 		t := getDummyTable()
+	// 		appGrid.AddItem(t, 2, 0, 1, 3, 0, 0, true)
+	// 	})
+	// }()
+
+	if err := a.app.Run(); err != nil {
 		log.WithError(err).Error("could not render table")
 	}
 

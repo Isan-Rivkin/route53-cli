@@ -306,7 +306,7 @@ func (r53m *Route53Manager) GetRecordSetAliases(recordName string, skipNSVerific
 				continue
 			}
 		}
-		return &GetRecordAliasesResult{Region: r53m.GetRegion(), Records: recordSets, HostedZone: hosedZone, Stream: recordStream}, nil
+		return &GetRecordAliasesResult{Region: r53m.GetRegion(), Records: recordSets, HostedZone: hosedZone, Stream: recordStream, VerifiedHostedZone: skipNSVerification}, nil
 	}
 	return nil, errors.New("NoRecordMatchFound")
 }

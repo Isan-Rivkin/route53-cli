@@ -84,6 +84,9 @@ func (r *GetRecordAliasesResult) GetR53AsTableOutput(input *R53ResultTableInput)
 				}
 
 			}
+			if url, found := r.recordURL(recSet); found {
+				outputRow[WebURLCol] = url
+			}
 		}
 
 		output.Outputs = append(output.Outputs, outputRow)

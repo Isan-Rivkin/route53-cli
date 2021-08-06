@@ -35,10 +35,11 @@ type GroupManager interface {
 }
 
 type GetRecordAliasesResult struct {
-	Records    []*route53.ResourceRecordSet
-	HostedZone *route53.HostedZone
-	Stream     RecordStream
-	Region     string
+	VerifiedHostedZone bool
+	Records            []*route53.ResourceRecordSet
+	HostedZone         *route53.HostedZone
+	Stream             RecordStream
+	Region             string
 }
 
 type Route53Api interface {
