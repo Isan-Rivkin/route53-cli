@@ -20,6 +20,7 @@ const (
 )
 
 type R53ResultTableOutput struct {
+	HzOutput     *HostedZoneR53ResultTableOutput
 	Outputs      []map[string]string
 	NonEmptyCols map[string]bool
 }
@@ -58,6 +59,9 @@ func (r *GetRecordAliasesResult) getSupportedParsers() map[string]func(*route53.
 }
 
 func (r *GetRecordAliasesResult) GetR53AsTableOutput(input *R53ResultTableInput) *R53ResultTableOutput {
+
+	// parse r53 recourds results into a dynamic table
+
 	output := &R53ResultTableOutput{}
 
 	nonEmptyCols := map[string]bool{}
@@ -86,6 +90,10 @@ func (r *GetRecordAliasesResult) GetR53AsTableOutput(input *R53ResultTableInput)
 	}
 
 	output.NonEmptyCols = nonEmptyCols
+
+	// parse hostedZone table
+
+	output.HzOutput = r.GetHostedZoneR53AsTableOutput()
 
 	return output
 }
