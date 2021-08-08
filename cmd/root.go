@@ -42,7 +42,7 @@ var skipNSVerification bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:     "r53 -r '*.some.dns.record.com'\n  r53 -r https://my.r53.website.com",
+	Use:     "r53 -R -r '*.some.dns.record.com'\n  r53 -r https://my.r53.website.com",
 	Version: AppVersion,
 	Short:   "Query route53 to get your dns record values",
 	Long: `Query Route53 to get all sorts of information about a dns record. 
@@ -66,15 +66,13 @@ func VersionCheck() {
 
 }
 
-func ExecuteR53() {
-
+func GetR53Query(defaultDepth int) ([]*awsu.GetRecordAliasesResult, error) {
 	if debug {
 		log.SetLevel(log.DebugLevel)
 	}
 
 	if recordInput == "" {
-		log.Error("query must not be empty use -r flag or --help")
-		return
+		return nil, fmt.Errorf("query must not be empty use -r flag or --help")
 	}
 
 	log.WithField("profile", awsProfile).Info("using aws environment session")
@@ -87,13 +85,20 @@ func ExecuteR53() {
 
 	depth := *recusiveSearchMaxDepth
 	if !*recursiveSearch {
-		depth = 1
+		depth = defaultDepth
 	}
 
 	results, err := api.GetRecordSetAliasesRecursive(depth, recordInput, skipNSVerification, nil)
 
+	return results, err
+}
+
+func ExecuteR53() {
+
+	results, err := GetR53Query(1)
+
 	if err != nil {
-		log.WithError(err).Error("failed")
+		log.WithError(err).Error("failed, potentially not authorized with aws")
 		return
 	}
 
