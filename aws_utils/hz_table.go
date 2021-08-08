@@ -14,7 +14,8 @@ const (
 var supportedCols = []string{HZNameCol, HZIdCol, HZTotalRecordsCol, HZPrivateCol}
 
 type HostedZoneR53ResultTableOutput struct {
-	Outputs map[string]string
+	Outputs             map[string]string
+	VerifiedNameservers bool
 }
 
 func (o *HostedZoneR53ResultTableOutput) GetHZTableCols() []string {
@@ -57,7 +58,8 @@ func (r *GetRecordAliasesResult) GetHostedZoneR53AsTableOutput() *HostedZoneR53R
 	}
 
 	return &HostedZoneR53ResultTableOutput{
-		Outputs: hzTableoutput,
+		Outputs:             hzTableoutput,
+		VerifiedNameservers: r.VerifiedHostedZone,
 	}
 
 }

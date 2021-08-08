@@ -16,17 +16,14 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
+	ui "r53/cliui/abstracts"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
-	ui "r53/cliui"
 )
 
-// intoCmd represents the into command
-var intoCmd = &cobra.Command{
-	Use:   "into",
+// testUiCmd represents the testUi command
+var testUiCmd = &cobra.Command{
+	Use:   "test-ui",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -35,41 +32,21 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		defaultDepth := 3
-		result, err := GetR53Query(defaultDepth)
-
-		if err != nil {
-			log.WithError(err).Error("failed, potentially not authorized with aws")
-			return
-		}
-
-		if len(result) != 1 {
-			log.Error(fmt.Errorf("there is %d, only 1 hosted zone in the result sets is currently supported", len(result)))
-			return
-		}
-
-		app := ui.NewR53App()
-
-		app.SetR53RecordsQueryResult(result[0])
-		err = app.Run()
-
-		if err != nil {
-			panic(err)
-		}
-
+		app := ui.NewApp()
+		app.Render()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(intoCmd)
+	rootCmd.AddCommand(testUiCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// intoCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// testUiCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// intoCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// testUiCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
