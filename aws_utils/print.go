@@ -18,7 +18,6 @@ func (r *GetRecordAliasesResult) PrintTable(opts *PrintOptions) {
 	r.printRecordsTable(opts)
 }
 
-
 func (r *GetRecordAliasesResult) printRecordsTable(opts *PrintOptions) {
 	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
 	t := table.NewWriter()

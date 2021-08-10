@@ -48,6 +48,9 @@ var rootCmd = &cobra.Command{
 	Long: `Query Route53 to get all sorts of information about a dns record. 
 r53 will use your default AWS credentials`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if debug {
+			log.SetLevel(log.DebugLevel)
+		}
 		ExecuteR53()
 		VersionCheck()
 	},
@@ -67,9 +70,6 @@ func VersionCheck() {
 }
 
 func GetR53Query(defaultDepth int) ([]*awsu.GetRecordAliasesResult, error) {
-	if debug {
-		log.SetLevel(log.DebugLevel)
-	}
 
 	if recordInput == "" {
 		return nil, fmt.Errorf("query must not be empty use -r flag or --help")
