@@ -22,6 +22,9 @@ func (app *R53App) RenderR53RecordsTable(result *awsUtils.GetRecordAliasesResult
 
 	tablePrompt.AddSelectionCallBack(onSelected)
 
+	// here web url is truncated awsUtils.WebURLCol since it's too big for the ui col
+	// TODO:: adding another row will not help for url since it will expend it's width for the whole table
+	// maybe create multiple tables with rows under it w/e
 	header := []string{awsUtils.NumCol, awsUtils.RecordCol, awsUtils.TypeCol, awsUtils.TTLCol, awsUtils.CountryCol, awsUtils.AliasCol, awsUtils.ResourcesCol}
 
 	output := result.GetR53AsTableOutput(&awsUtils.R53ResultTableInput{
@@ -44,6 +47,7 @@ func (app *R53App) RenderR53RecordsTable(result *awsUtils.GetRecordAliasesResult
 		}
 
 		// if web url exist create additional row below with the result
+		// !!! this will not work because the column width of url will be the size of the web url so display will still be the same with additional empty row
 		// if url, found := row[awsUtils.WebURLCol]; found {
 		// 	tablePrompt.AddInfoRow(currentRow+2, 0, url)
 		// 	currentRow++

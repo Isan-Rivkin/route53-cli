@@ -63,11 +63,15 @@ func GenerateWebURL(r *route53.ResourceRecordSet) (string, error) {
 	return "", e
 }
 
-func getRegionFromLBDNSName(dnsIdentifier string, r *route53.ResourceRecordSet) string {
+func GetRegionFromLBDNSName(dnsIdentifier string, r *route53.ResourceRecordSet) string {
 	record := *r.AliasTarget.DNSName
 	record = strings.TrimRight(record, ".")
 
-	region := *r.Region
+	region := "us-east-1"
+	if r != nil && r.Region != nil {
+		region = *r.Region
+	}
+
 	// parse region
 	splitted := strings.Split(record, ".")
 
@@ -94,7 +98,7 @@ func GetLBWebURL(dnsIdentifier string, r *route53.ResourceRecordSet) string {
 
 	searchQuery := record
 	// parse region
-	region := getRegionFromLBDNSName(dnsIdentifier, r)
+	region := GetRegionFromLBDNSName(dnsIdentifier, r)
 
 	if strings.HasPrefix(searchQuery, "dualstack.") {
 		searchQuery = strings.TrimLeft(searchQuery, "dualstack.")

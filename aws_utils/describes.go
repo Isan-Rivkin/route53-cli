@@ -27,6 +27,7 @@ type Resource interface {
 
 type AWSResourceIdentifier interface {
 	InferFromRecordSet(r *route53.ResourceRecordSet) ([]ResourceType, error)
+	InferRegionFromDNS(r *route53.ResourceRecordSet) string
 }
 
 type ResourceDescriber interface {
@@ -51,6 +52,10 @@ func (desc *AWSResourceDescriber) Describe(rtype ResourceType, info interface{})
 	case ELBType:
 		input := info.(*LBDescriptionInput)
 		output, err := desc.describeLB(input)
+		return output, err
+	case TargetGroupType:
+		input := info.(*TGDescriptionInput)
+		output, err := desc.describeTG(input)
 		return output, err
 	default:
 		descErr = fmt.Errorf("resource type not support for describe - %s", rtype)

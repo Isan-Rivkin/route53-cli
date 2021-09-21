@@ -22,6 +22,7 @@ const (
 	CloudFrontType       ResourceType = "cloudfront"
 	ElasticBeansTalkType ResourceType = "elasticbeanstalk"
 	AcceleratorApiType   ResourceType = "awsglobalaccelerator"
+	TargetGroupType      ResourceType = "targetgroup"
 )
 
 var dnsTargetsToTypes = map[string]ResourceType{
@@ -56,4 +57,14 @@ func (ri *DefaultResourceIdentifier) InferFromRecordSet(r *route53.ResourceRecor
 	}
 
 	return []ResourceType{resourceType}, nil
+}
+
+func (ri *DefaultResourceIdentifier) InferRegionFromDNS(r *route53.ResourceRecordSet) string {
+	dnsType, routable := CheckRoutableAWSTarget(r)
+
+	if !routable {
+		return ""
+	}
+
+	return GetRegionFromLBDNSName(dnsType, r)
 }

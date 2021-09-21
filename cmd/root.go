@@ -94,8 +94,8 @@ func GetR53Query(defaultDepth int) ([]*awsu.GetRecordAliasesResult, error) {
 }
 
 func ExecuteR53() {
-
-	results, err := GetR53Query(1)
+	defaultDepth := 3
+	results, err := GetR53Query(defaultDepth)
 
 	if err != nil {
 		log.WithError(err).Error("failed, potentially not authorized with aws")
