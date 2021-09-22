@@ -13,6 +13,48 @@ const (
 	ELBDnsFilter = "dns-filter"
 )
 
+type LBListenersDescribeInput struct {
+	ELBArn *string
+	Region string
+}
+
+func NewLBListenersDescribeInputFromELB(elbArn, region string) *LBListenersDescribeInput {
+	return &LBListenersDescribeInput{
+		ELBArn: aws.String(elbArn),
+		Region: region,
+	}
+}
+
+type LBListenersDescriptionOutput struct {
+	ELBToListeners map[string][]*elb.Listener
+}
+
+func NewLBListenersDescriptionOutput(awsOutput *elb.DescribeListenersOutput) *LBListenersDescriptionOutput {
+	result := &LBListenersDescriptionOutput{
+		ELBToListeners: map[string][]*elb.Listener{},
+	}
+
+	if awsOutput == nil || awsOutput.Listeners == nil {
+		return result
+	}
+
+	for _, l := range awsOutput.Listeners {
+		result.ELBToListeners[*l.LoadBalancerArn] = append(result.ELBToListeners[*l.LoadBalancerArn], l)
+	}
+
+	return result
+}
+
+func (o *LBListenersDescriptionOutput) GetListeners(elbArn string) []*elb.Listener {
+	listeners, found := o.ELBToListeners[elbArn]
+
+	if !found {
+		return []*elb.Listener{}
+	}
+
+	return listeners
+}
+
 type LBDescriptionInput struct {
 	DNSNames      map[string]bool
 	dnsNamesFound map[string]bool
@@ -64,7 +106,8 @@ func (i *LBDescriptionInput) isMatching(l *elb.LoadBalancer) (bool, bool, error)
 }
 
 type LBDescriptionOutput struct {
-	LoadBalancers []*elb.LoadBalancer
+	LoadBalancers     []*elb.LoadBalancer
+	OptionalListeners *LBListenersDescriptionOutput
 }
 
 func (d *AWSResourceDescriber) lbclient(region string) *elb.ELBV2 {
@@ -73,6 +116,23 @@ func (d *AWSResourceDescriber) lbclient(region string) *elb.ELBV2 {
 		return d.elbClient
 	}
 	return d.elbClient
+}
+
+// currently it takes load balancer arn to describe listeners. if no arn is given it will work but the result will be paged and its not supported right now
+// TODO:: support other forms of filtering besides elb arn
+func (d *AWSResourceDescriber) describeELBListeners(i *LBListenersDescribeInput) (*LBListenersDescriptionOutput, error) {
+	input := &elb.DescribeListenersInput{
+		LoadBalancerArn: i.ELBArn,
+	}
+	c := d.lbclient(i.Region)
+
+	out, err := c.DescribeListeners(input)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return NewLBListenersDescriptionOutput(out), nil
 }
 
 func (d *AWSResourceDescriber) describeLB(i *LBDescriptionInput) (*LBDescriptionOutput, error) {

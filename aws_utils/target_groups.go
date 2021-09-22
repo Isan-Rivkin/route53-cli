@@ -1,6 +1,11 @@
 package aws_utils
 
 import (
+	"errors"
+	"net"
+	"strconv"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	elb "github.com/aws/aws-sdk-go/service/elbv2"
 	log "github.com/sirupsen/logrus"
@@ -25,11 +30,76 @@ func (i *TGDescriptionInput) GetAWSInput() *elb.DescribeTargetGroupsInput {
 	}
 }
 
+type TGTargetOutput struct {
+	TargetHealth *elb.TargetHealthDescription
+	// target could be lambda, ec2 or ip. use the helper methods to get the type of the target
+	TargetType ResourceType
+}
+
+func NewTGTargetOutput(t *elb.TargetHealthDescription) *TGTargetOutput {
+	target := &TGTargetOutput{
+		TargetHealth: t,
+	}
+
+	// infer target type
+	tid := *t.Target.Id
+	// check if ec2
+	if strings.HasPrefix(tid, "i-") {
+		target.TargetType = EC2Type
+	} else if strings.HasPrefix(tid, "arn:aws:lambda:") { // check if lambda
+		target.TargetType = LambdaType
+	} else { // check if ip
+		addr := net.ParseIP(tid)
+		if addr != nil {
+			target.TargetType = RawIpType
+		}
+	}
+	return target
+}
+
+func (o *TGTargetOutput) IsEC2() bool {
+	return o.TargetType == EC2Type
+}
+
+func (o *TGTargetOutput) IsLambda() bool {
+	return o.TargetType == LambdaType
+}
+
+func (o *TGTargetOutput) IsRawIp() bool {
+	return o.TargetType == RawIpType
+}
+
+func (o *TGTargetOutput) GetHealthcheckPort() string {
+	if o.TargetHealth.HealthCheckPort != nil {
+		return *o.TargetHealth.HealthCheckPort
+	}
+	return ""
+}
+
+func (o *TGTargetOutput) IsTargetHealthy() bool {
+	return o.TargetHealth.TargetHealth != nil &&
+		o.TargetHealth.TargetHealth.State != nil &&
+		*o.TargetHealth.TargetHealth.State == "healthy"
+}
+
+func (o *TGTargetOutput) GetTargetID() string {
+	return *o.TargetHealth.Target.Id
+}
+
+// lambda has no target port and if the protocol is GENEVE then port is 6081
+func (o *TGTargetOutput) GetTargetPort() (string, error) {
+	if o.IsLambda() {
+		return "", errors.New("NoPortForLambdaTarget")
+	}
+	strPort := strconv.FormatInt(*o.TargetHealth.Target.Port, 10)
+	return strPort, nil
+}
+
 type TGDescriptionOutput struct {
 	TargetGroups []*elb.TargetGroup
 	// key: target group arn, value: targets description for the tg (i.e ec2 instances)
 	// optional, usually will be set if WithTargets:true in TGDescriptionInput
-	TGToTargets map[string][]*elb.TargetHealthDescription
+	TGToTargets map[string][]*TGTargetOutput
 }
 
 // this is the way to infer the instances and other targets in a target group from a target group arn.
@@ -64,7 +134,7 @@ func (d *AWSResourceDescriber) describeTG(i *TGDescriptionInput) (*TGDescription
 	// attach targets information such as ec2 id's
 	if i.WithTargets {
 
-		output.TGToTargets = map[string][]*elb.TargetHealthDescription{}
+		output.TGToTargets = map[string][]*TGTargetOutput{}
 
 		for _, tg := range awsOutput.TargetGroups {
 
@@ -74,7 +144,11 @@ func (d *AWSResourceDescriber) describeTG(i *TGDescriptionInput) (*TGDescription
 				continue
 			}
 
-			output.TGToTargets[*tg.TargetGroupArn] = targetsHealth
+			var targets []*TGTargetOutput
+			for _, th := range targetsHealth {
+				targets = append(targets, NewTGTargetOutput(th))
+			}
+			output.TGToTargets[*tg.TargetGroupArn] = targets
 		}
 	}
 

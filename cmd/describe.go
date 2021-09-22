@@ -19,6 +19,8 @@ import (
 	"fmt"
 	awsu "r53/aws_utils"
 
+	"github.com/aws/aws-sdk-go/aws"
+	elb "github.com/aws/aws-sdk-go/service/elbv2"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -96,27 +98,125 @@ func describeELBDynamic() {
 			elbOutput := describeELB(dnsAlias, region)
 
 			if elbOutput != nil {
+
+				// target groups
 				lg.Info("try describe target groups")
-				describeTG(*elbOutput.LoadBalancers[0].LoadBalancerArn, region)
+				tg := describeTG(*elbOutput.LoadBalancers[0].LoadBalancerArn, region)
+				describeTargetGroupInstances(tg, region)
+
+				// listeners
+				// lg.Info("try describe elb listeners")
+				// listeners := describeELBListeners(*elbOutput.LoadBalancers[0].LoadBalancerArn, region)
+				// // certificates
+				// lg.Info("try describe elb certificates from listeners")
+				// for _, l := range listeners {
+				// 	for _, c := range l.Certificates {
+				// 		describeCertificates(*c.CertificateArn)
+				// 	}
+				// }
 			}
 		}
 	}
 
 }
 
-func describeTG(arn, region string) {
+func describeTargetGroupInstances(tg *awsu.TGDescriptionOutput, region string) {
+	var ec2Ids []string
+
+	for _, g := range tg.TargetGroups {
+		arn := aws.StringValue(g.TargetGroupArn)
+		targets := tg.TGToTargets[arn]
+		for _, t := range targets {
+			if t.IsEC2() {
+				ec2Ids = append(ec2Ids, t.GetTargetID())
+			}
+		}
+	}
+	describeInstances(ec2Ids, region)
+}
+
+func describeInstances(ids []string, region string) {
+	describer := awsu.NewAWSResourceDescriber(awsProfile)
+	input := awsu.NewEC2InstanceDescInputFromInstanceIds(region, ids)
+
+	out, err := describer.Describe(awsu.EC2Type, input)
+
+	if err != nil {
+		log.WithError(err).Error("failed describing ec2 instances from ids")
+		return
+	}
+
+	output := out.(*awsu.EC2InstanceDescOutput)
+
+	log.Info("tg has instances found ", len(output.GetAllInstances()))
+
+	for _, inst := range output.GetAllInstances() {
+		uptime, _ := inst.GetPrettyUptime()
+
+		log.WithFields(log.Fields{
+			"name":      inst.GetNameTag(),
+			"id":        inst.ID(),
+			"privateIp": inst.GetInstancePrivateIpV4(),
+			"publicIp":  inst.GetInstancePublicIpV4(),
+			"uptime":    uptime,
+			"status":    inst.GetInstanceState(),
+		}).Info("ec2 instance")
+	}
+
+}
+
+func describeCertificates(certArn string) {
+	describer := awsu.NewAWSResourceDescriber(awsProfile)
+	input := awsu.NewACMDescpInputFromARN(certArn)
+
+	out, err := describer.Describe(awsu.ACMType, input)
+
+	if err != nil {
+		log.WithError(err).Error("failed describing acm certificate from arn")
+		return
+	}
+
+	output := out.(*awsu.ACMDescOutput)
+
+	log.Info(output.GetAllDomains())
+}
+
+func describeELBListeners(arn, region string) []*elb.Listener {
+	describer := awsu.NewAWSResourceDescriber(awsProfile)
+	input := awsu.NewLBListenersDescribeInputFromELB(arn, region)
+	out, err := describer.Describe(awsu.ELBListenersType, input)
+
+	if err != nil {
+		log.WithError(err).Error("failed describing listeners from load balancer from arn")
+		return nil
+	}
+
+	output := out.(*awsu.LBListenersDescriptionOutput)
+
+	listeners := output.GetListeners(arn)
+
+	log.Info("listeners for elb found ", len(listeners))
+
+	for _, l := range listeners {
+		log.Info(l.String())
+	}
+
+	return listeners
+}
+
+func describeTG(arn, region string) *awsu.TGDescriptionOutput {
 	describer := awsu.NewAWSResourceDescriber(awsProfile)
 	withTargets := true
 	input := awsu.NewTGDescriptionInputFromELBArn(arn, region, withTargets)
 
 	out, err := describer.Describe(awsu.TargetGroupType, input)
 
-	output := out.(*awsu.TGDescriptionOutput)
-
 	if err != nil {
 		log.WithError(err).Error("failed describing target group from load balancer from arn")
-		return
+		return nil
 	}
+
+	output := out.(*awsu.TGDescriptionOutput)
 
 	log.Info("found target group ", len(output.TargetGroups))
 
@@ -125,13 +225,15 @@ func describeTG(arn, region string) {
 		targets := output.TGToTargets[*tg.TargetGroupArn]
 		log.Info("---> tg contains targets ", len(targets))
 		for _, t := range targets {
-			currently im at this stage: 
-			get address -> get r53 records -> extract elbs -> describe target groups -> passing withTargets = true -> returns target group targerts descriptions i.e ec2 instances and stuff 
-			its another api call and for some reason i got rate limited, some result worked for alb other didnt.
-			action: figure out the rate limit, describe targets, turn them into ec2 targes (identify from id) and keep expending 
-			log.Info(t.String())
+			l := log.WithFields(log.Fields{
+				"type":    t.TargetType,
+				"id":      t.GetTargetID(),
+				"healthy": t.IsTargetHealthy(),
+			})
+			l.Info("tg target")
 		}
 	}
+	return output
 }
 
 func describeELB(name, region string) *awsu.LBDescriptionOutput {

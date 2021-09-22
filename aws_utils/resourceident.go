@@ -2,6 +2,7 @@ package aws_utils
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/service/route53"
 )
@@ -23,6 +24,11 @@ const (
 	ElasticBeansTalkType ResourceType = "elasticbeanstalk"
 	AcceleratorApiType   ResourceType = "awsglobalaccelerator"
 	TargetGroupType      ResourceType = "targetgroup"
+	ELBListenersType     ResourceType = "listener"
+	EC2Type              ResourceType = "ec2"
+	LambdaType           ResourceType = "lambda"
+	RawIpType            ResourceType = "ip"
+	ACMType              ResourceType = "acm"
 )
 
 var dnsTargetsToTypes = map[string]ResourceType{
@@ -67,4 +73,19 @@ func (ri *DefaultResourceIdentifier) InferRegionFromDNS(r *route53.ResourceRecor
 	}
 
 	return GetRegionFromLBDNSName(dnsType, r)
+}
+
+// arn is always arn:partition:service:region:account-id:resource-type:resource-id
+func (ri *DefaultResourceIdentifier) InferRegionFromResourceARN(arn string) string {
+
+	if !strings.HasPrefix(arn, "arn:") {
+		return ""
+	}
+
+	arnChunks := strings.Split(arn, ":")
+	if len(arnChunks) < 4 {
+		return ""
+	}
+
+	return arnChunks[3]
 }

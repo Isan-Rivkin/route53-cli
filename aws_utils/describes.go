@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/acm"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	elb "github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/route53"
 )
@@ -28,6 +30,7 @@ type Resource interface {
 type AWSResourceIdentifier interface {
 	InferFromRecordSet(r *route53.ResourceRecordSet) ([]ResourceType, error)
 	InferRegionFromDNS(r *route53.ResourceRecordSet) string
+	InferRegionFromResourceARN(arn string) string
 }
 
 type ResourceDescriber interface {
@@ -37,6 +40,8 @@ type ResourceDescriber interface {
 type AWSResourceDescriber struct {
 	session   *session.Session
 	elbClient *elb.ELBV2
+	acmClient *acm.ACM
+	ec2Client *ec2.EC2
 }
 
 func NewAWSResourceDescriber(profile string) ResourceDescriber {
@@ -51,12 +56,19 @@ func (desc *AWSResourceDescriber) Describe(rtype ResourceType, info interface{})
 	case ALBOrCLBType:
 	case ELBType:
 		input := info.(*LBDescriptionInput)
-		output, err := desc.describeLB(input)
-		return output, err
+		return desc.describeLB(input)
 	case TargetGroupType:
 		input := info.(*TGDescriptionInput)
-		output, err := desc.describeTG(input)
-		return output, err
+		return desc.describeTG(input)
+	case ELBListenersType:
+		input := info.(*LBListenersDescribeInput)
+		return desc.describeELBListeners(input)
+	case ACMType:
+		input := info.(*ACMDescpInput)
+		return desc.describeCertificate(input)
+	case EC2Type:
+		input := info.(*EC2InstanceDescInput)
+		return desc.describeEC2Instances(input)
 	default:
 		descErr = fmt.Errorf("resource type not support for describe - %s", rtype)
 	}
