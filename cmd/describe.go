@@ -270,3 +270,27 @@ func init() {
 	// is called directly, e.g.:
 	// describeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
+
+// r53Record:
+// -> click (elb)
+// -> E: elb
+// --> E: network info...
+// --> E: certs
+// --> E: TG
+// --> E: Listeners
+// ---> E: Ec2 instances
+// ----> E: network info...
+
+// Scope{
+// 	RootResource Resource
+// 	LinkedResources []Scope
+// }
+
+// ScopeManager{
+// 	Scopes
+// }
+
+// GetLinkedResourceTypes() []ResourceType
+// ExpandDirectChild(ResourceType)
+// ExpandWalk(func (Resource Scope, depth int) keepExpanding bool)
+// Expand(ResourceType)

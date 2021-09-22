@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 
 	ui "r53/cliui"
+	"r53/cliui/abstracts"
 )
 
 // intoCmd represents the into command
@@ -48,9 +49,33 @@ to quickly create a Cobra application.`,
 			return
 		}
 
-		app := ui.NewR53App()
+		// create channel to get ui even updates
+		eventsController := make(chan *ui.AppEvent)
+
+		app := ui.NewR53App(eventsController)
 
 		app.SetR53RecordsQueryResult(result[0])
+
+		go func() {
+			for {
+				select {
+				case event, keepOpen := <-eventsController:
+					if keepOpen {
+						fmt.Println("got event! ", event.Type)
+						tableSelection := event.EventPayload.(*abstracts.TableSelectionResult)
+						rowCells := tableSelection.RowCells
+						alisCol := 3
+						fmt.Println(fmt.Sprintf("selected! row %d col %d txt %s", tableSelection.RowSelected, tableSelection.ColSelected, rowCells[alisCol].Text))
+						// trigger tree and expansion
+
+					} else {
+						fmt.Println("closing channel ")
+						return
+					}
+				}
+			}
+		}()
+
 		err = app.Run()
 
 		if err != nil {

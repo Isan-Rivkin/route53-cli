@@ -13,6 +13,7 @@ type TableSelectionResult struct {
 	SelectedText string
 	RowSelected  int
 	ColSelected  int
+	RowCells     []*tview.TableCell
 }
 
 type OnTableSelectionFunc func(*TableSelectionResult)
@@ -74,11 +75,19 @@ func (tp *TablePrompt) Render() *tview.Table {
 		//tp.app.Stop()
 		cellVall := tp.table.GetCell(row, column).Text
 		if tp.onTableSelected != nil {
+			// get all cells
+			rowCells := []*tview.TableCell{}
+			colsNum := tp.table.GetColumnCount()
+			for i := 0; i < colsNum; i++ {
+				val := tp.table.GetCell(row, i)
+				rowCells = append(rowCells, val)
+			}
 			tp.onTableSelected(&TableSelectionResult{
 				IsSelected:   true,
 				SelectedText: cellVall,
 				RowSelected:  row,
 				ColSelected:  column,
+				RowCells:     rowCells,
 			})
 		}
 	})

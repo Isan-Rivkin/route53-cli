@@ -8,9 +8,17 @@ import (
 	"github.com/rivo/tview"
 )
 
+func (app *R53App) OnR53TableSelection(selection *abstracts.TableSelectionResult) {
+
+	app.EventsController <- &AppEvent{
+		Type:         TableSelection,
+		EventPayload: selection,
+	}
+}
+
 func (app *R53App) SetR53RecordsQueryResult(result *awsUtils.GetRecordAliasesResult) {
 	// get records gui table
-	recordsTable, output := app.RenderR53RecordsTable(result, nil)
+	recordsTable, output := app.RenderR53RecordsTable(result, app.OnR53TableSelection)
 	// get hosted zone text view
 	hostedZoneLabeled := app.RenderHostedZoneTextView(output)
 	hzTextView := hostedZoneLabeled.Render()
