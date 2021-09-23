@@ -1,6 +1,7 @@
 package aws_utils
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -31,6 +32,12 @@ const (
 	ACMType              ResourceType = "acm"
 )
 
+add resource types here to demonstarte connections 
+var AdjacentResources = map[ResourceType][]ResourceType{
+	ALBOrCLBType: {TargetGroupType, ELBListenersType},
+	ELBType:      {TargetGroupType, ELBListenersType},
+}
+
 var dnsTargetsToTypes = map[string]ResourceType{
 	ALBDns:              ALBOrCLBType,
 	NLBDns:              NLBType,
@@ -49,8 +56,8 @@ func NewDefaultResourceIdentifier() AWSResourceIdentifier {
 	return &DefaultResourceIdentifier{}
 }
 
-func (ri *DefaultResourceIdentifier) InferFromRecordSet(r *route53.ResourceRecordSet) ([]ResourceType, error) {
-	dnsType, routable := CheckRoutableAWSTarget(r)
+func (ri *DefaultResourceIdentifier) InferTypeFromDNS(dns string) ([]ResourceType, error) {
+	dnsType, routable := checkRoutableAWSTargetDNS(dns)
 
 	if !routable {
 		return nil, fmt.Errorf(ErrNotRoutableAWS)
@@ -59,10 +66,19 @@ func (ri *DefaultResourceIdentifier) InferFromRecordSet(r *route53.ResourceRecor
 	resourceType, found := dnsTargetsToTypes[dnsType]
 
 	if !found {
-		return nil, fmt.Errorf("%s - %s not supported for record %s", ErrGettingType, dnsType, *r.AliasTarget.DNSName)
+		return nil, fmt.Errorf("%s - %s not supported for record %s", ErrGettingType, dnsType, dns)
 	}
 
 	return []ResourceType{resourceType}, nil
+}
+func (ri *DefaultResourceIdentifier) InferFromRecordSet(r *route53.ResourceRecordSet) ([]ResourceType, error) {
+	if r.AliasTarget == nil || r.AliasTarget.DNSName == nil {
+		return nil, errors.New("ErrNoDNSTarget")
+	}
+
+	dns := *r.AliasTarget.DNSName
+
+	return ri.InferTypeFromDNS(dns)
 }
 
 func (ri *DefaultResourceIdentifier) InferRegionFromDNS(r *route53.ResourceRecordSet) string {

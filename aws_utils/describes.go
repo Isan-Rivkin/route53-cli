@@ -29,6 +29,7 @@ type Resource interface {
 
 type AWSResourceIdentifier interface {
 	InferFromRecordSet(r *route53.ResourceRecordSet) ([]ResourceType, error)
+	InferTypeFromDNS(dns string) ([]ResourceType, error)
 	InferRegionFromDNS(r *route53.ResourceRecordSet) string
 	InferRegionFromResourceARN(arn string) string
 }

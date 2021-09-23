@@ -66,7 +66,9 @@ to quickly create a Cobra application.`,
 						rowCells := tableSelection.RowCells
 						alisCol := 3
 						fmt.Println(fmt.Sprintf("selected! row %d col %d txt %s", tableSelection.RowSelected, tableSelection.ColSelected, rowCells[alisCol].Text))
+						fmt.Println("!!!!! ", rowCells[alisCol].Reference)
 						// trigger tree and expansion
+						app.AddResourceExpansionTree()
 
 					} else {
 						fmt.Println("closing channel ")

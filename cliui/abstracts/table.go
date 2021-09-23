@@ -9,11 +9,12 @@ import (
 )
 
 type TableSelectionResult struct {
-	IsSelected   bool
-	SelectedText string
-	RowSelected  int
-	ColSelected  int
-	RowCells     []*tview.TableCell
+	IsSelected        bool
+	SelectedText      string
+	SelectedReference string
+	RowSelected       int
+	ColSelected       int
+	RowCells          []*tview.TableCell
 }
 
 type OnTableSelectionFunc func(*TableSelectionResult)
@@ -55,8 +56,10 @@ func (tp *TablePrompt) defaultCell(text string, color tcell.Color) *tview.TableC
 }
 
 // AddRow adding new row to the grid
-func (tp *TablePrompt) AddRow(row, column int, text string) {
+// reference is some identifier on top of the actual cell value such as some host id etc
+func (tp *TablePrompt) AddRow(row, column int, text, reference string) {
 	cell := tp.defaultCell(text, tcell.ColorWhite)
+	cell.SetReference(reference)
 	tp.table.SetCell(row, column, cell)
 }
 
@@ -73,7 +76,8 @@ func (tp *TablePrompt) Render() *tview.Table {
 		tp.table.GetCell(row, column).SetTextColor(tcell.ColorRed)
 		tp.table.SetSelectable(true, false)
 		//tp.app.Stop()
-		cellVall := tp.table.GetCell(row, column).Text
+		selectedCell := tp.table.GetCell(row, column)
+		cellVall := selectedCell.Text
 		if tp.onTableSelected != nil {
 			// get all cells
 			rowCells := []*tview.TableCell{}
@@ -83,11 +87,12 @@ func (tp *TablePrompt) Render() *tview.Table {
 				rowCells = append(rowCells, val)
 			}
 			tp.onTableSelected(&TableSelectionResult{
-				IsSelected:   true,
-				SelectedText: cellVall,
-				RowSelected:  row,
-				ColSelected:  column,
-				RowCells:     rowCells,
+				IsSelected:        true,
+				SelectedText:      cellVall,
+				SelectedReference: selectedCell.Reference.(string),
+				RowSelected:       row,
+				ColSelected:       column,
+				RowCells:          rowCells,
 			})
 		}
 	})

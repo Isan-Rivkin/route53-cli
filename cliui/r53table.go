@@ -11,7 +11,7 @@ import (
 func (app *R53App) OnR53TableSelection(selection *abstracts.TableSelectionResult) {
 
 	app.EventsController <- &AppEvent{
-		Type:         TableSelection,
+		Type:         R53TableSelection,
 		EventPayload: selection,
 	}
 }
@@ -44,14 +44,32 @@ func (app *R53App) RenderR53RecordsTable(result *awsUtils.GetRecordAliasesResult
 	tablePrompt.AddHeaders(append([]string{"#"}, nonEmptyHeaders...))
 
 	currentRow := 0
+
+	// check if alias column exist for reference value
+	aliasHeaderExist := false
+	for _, h := range nonEmptyHeaders {
+		if h == awsUtils.AliasCol {
+			aliasHeaderExist = true
+			break
+		}
+	}
+	// populate columns
 	for _, row := range output.Outputs {
 
+		cellRefValue := ""
+
+		if aliasHeaderExist {
+			cellRefValue = row[awsUtils.AliasCol]
+		}
+
 		// add the # col for row number
-		tablePrompt.AddRow(currentRow+1, 0, fmt.Sprintf("%d", currentRow+1))
+		// populate cell
+		tablePrompt.AddRow(currentRow+1, 0, fmt.Sprintf("%d", currentRow+1), cellRefValue)
 
 		// add all the cols in the result
 		for headerNum, headerName := range nonEmptyHeaders {
-			tablePrompt.AddRow(currentRow+1, headerNum+1, row[headerName])
+			// populate cell
+			tablePrompt.AddRow(currentRow+1, headerNum+1, row[headerName], cellRefValue)
 		}
 
 		// if web url exist create additional row below with the result
@@ -68,7 +86,7 @@ func (app *R53App) RenderR53RecordsTable(result *awsUtils.GetRecordAliasesResult
 }
 
 // SelectR53RecordFromList is return selected route53 record from the list by prompt question
-func SelectR53RecordFromList(result *awsUtils.GetRecordAliasesResult) (string, error) {
+func DEPRECATEDSelectR53RecordFromList(result *awsUtils.GetRecordAliasesResult) (string, error) {
 
 	header := []string{awsUtils.NumCol, awsUtils.RecordCol, awsUtils.TypeCol, awsUtils.TTLCol, awsUtils.CountryCol, awsUtils.AliasCol, awsUtils.ResourcesCol}
 

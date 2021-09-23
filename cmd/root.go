@@ -69,7 +69,7 @@ func VersionCheck() {
 
 }
 
-func GetR53Query(defaultDepth int) ([]*awsu.GetRecordAliasesResult, error) {
+func  GetR53Query(defaultDepth int) ([]*awsu.GetRecordAliasesResult, error) {
 
 	if recordInput == "" {
 		return nil, fmt.Errorf("query must not be empty use -r flag or --help")
