@@ -21,8 +21,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	awsu "r53/aws_utils"
 	ui "r53/cliui"
 	"r53/cliui/abstracts"
+	expander "r53/expander"
 )
 
 // intoCmd represents the into command
@@ -36,67 +38,119 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		defaultDepth := 3
-		result, err := GetR53Query(defaultDepth)
-
-		if err != nil {
-			log.WithError(err).Error("failed, potentially not authorized with aws")
-			return
-		}
-
-		if len(result) != 1 {
-			log.Error(fmt.Errorf("there is %d, only 1 hosted zone in the result sets is currently supported", len(result)))
-			return
-		}
-
-		// create channel to get ui even updates
-		eventsController := make(chan *ui.AppEvent)
-
-		app := ui.NewR53App(eventsController)
-
-		app.SetR53RecordsQueryResult(result[0])
-
-		go func() {
-			for {
-				select {
-				case event, keepOpen := <-eventsController:
-					if keepOpen {
-						fmt.Println("got event! ", event.Type)
-						tableSelection := event.EventPayload.(*abstracts.TableSelectionResult)
-						rowCells := tableSelection.RowCells
-						alisCol := 3
-						fmt.Println(fmt.Sprintf("selected! row %d col %d txt %s", tableSelection.RowSelected, tableSelection.ColSelected, rowCells[alisCol].Text))
-						fmt.Println("!!!!! ", rowCells[alisCol].Reference)
-						// trigger tree and expansion
-						app.AddResourceExpansionTree()
-
-					} else {
-						fmt.Println("closing channel ")
-						return
-					}
-				}
-			}
-		}()
-
-		err = app.Run()
-
-		if err != nil {
-			panic(err)
-		}
-
+		//dummy()
+		v1()
 	},
 }
 
+func v1() {
+	defaultDepth := 3
+	result, err := GetR53Query(defaultDepth)
+
+	if err != nil {
+		log.WithError(err).Error("failed, potentially not authorized with aws")
+		return
+	}
+
+	if len(result) != 1 {
+		log.Error(fmt.Errorf("there is %d, only 1 hosted zone in the result sets is currently supported", len(result)))
+		return
+	}
+
+	// create channel to get ui even updates
+	eventsController := make(chan *ui.AppEvent)
+
+	app := ui.NewR53App(eventsController)
+
+	app.SetR53RecordsQueryResult(result[0])
+
+	// expander logic
+	cache := expander.NewExpanderCache()
+	describer := awsu.NewAWSResourceDescriber(awsProfile)
+	expander := expander.NewExpander(describer, cache)
+
+	// controller mock
+	go func() {
+		for {
+			i am stuck here testing different things. mostly confusion. 
+			what i did so far was to create an expander and try now to work top bottom 
+			and mimic some stupid controller loop here before i start heavy implementation 
+			so the idea here is to call the xpander and pass it to thet tree structure to see a root created. 
+			select {
+			case event, keepOpen := <-eventsController:
+				if keepOpen {
+					tableSelection := event.EventPayload.(*abstracts.TableSelectionResult)
+					rowCells := tableSelection.RowCells
+					potentialTarget := rowCells[tableSelection.ColSelected].Reference
+					// trigger tree and expansion
+					expander.Expand(expander)
+					app.AddResourceExpansionTree(rou)
+
+				} else {
+					fmt.Println("closing channel ")
+					return
+				}
+			}
+		}
+	}()
+
+	err = app.Run()
+
+	if err != nil {
+		panic(err)
+	}
+
+}
+
+// func dummy() {
+// 	defaultDepth := 3
+// 	result, err := GetR53Query(defaultDepth)
+
+// 	if err != nil {
+// 		log.WithError(err).Error("failed, potentially not authorized with aws")
+// 		return
+// 	}
+
+// 	if len(result) != 1 {
+// 		log.Error(fmt.Errorf("there is %d, only 1 hosted zone in the result sets is currently supported", len(result)))
+// 		return
+// 	}
+
+// 	// create channel to get ui even updates
+// 	eventsController := make(chan *ui.AppEvent)
+
+// 	app := ui.NewR53App(eventsController)
+
+// 	app.SetR53RecordsQueryResult(result[0])
+
+// 	go func() {
+// 		for {
+// 			select {
+// 			case event, keepOpen := <-eventsController:
+// 				if keepOpen {
+// 					fmt.Println("got event! ", event.Type)
+// 					tableSelection := event.EventPayload.(*abstracts.TableSelectionResult)
+// 					rowCells := tableSelection.RowCells
+// 					alisCol := 3
+// 					fmt.Println(fmt.Sprintf("selected! row %d col %d txt %s", tableSelection.RowSelected, tableSelection.ColSelected, rowCells[alisCol].Text))
+// 					fmt.Println("!!!!! ", rowCells[alisCol].Reference)
+// 					// trigger tree and expansion
+// 					app.AddResourceExpansionTree()
+
+// 				} else {
+// 					fmt.Println("closing channel ")
+// 					return
+// 				}
+// 			}
+// 		}
+// 	}()
+
+// 	err = app.Run()
+
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// }
 func init() {
 	rootCmd.AddCommand(intoCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// intoCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// intoCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

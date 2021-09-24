@@ -2,6 +2,8 @@ package aws_utils
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/elbv2"
@@ -45,7 +47,17 @@ func NewLBListenersDescriptionOutput(awsOutput *elb.DescribeListenersOutput) *LB
 	return result
 }
 
+func (o *LBListenersDescriptionOutput) GetAllListeners() []*elb.Listener {
+	var all []*elb.Listener
+
+	for _, l := range o.ELBToListeners {
+		all = append(all, l...)
+	}
+	return all
+}
+
 func (o *LBListenersDescriptionOutput) GetListeners(elbArn string) []*elb.Listener {
+
 	listeners, found := o.ELBToListeners[elbArn]
 
 	if !found {
@@ -53,6 +65,39 @@ func (o *LBListenersDescriptionOutput) GetListeners(elbArn string) []*elb.Listen
 	}
 
 	return listeners
+}
+
+// GetOutputID is describing the resources in the query in a unique way
+// e.g if there are 3 instances their id will be unique and always consistent
+// used to identify cache
+func (o *LBListenersDescriptionOutput) GetOutputID() string {
+	arns := o.GetKeys()[ARNAttr]
+	sortedArns := sort.StringSlice(arns)
+	return strings.Join(sortedArns, ",")
+}
+
+func (o *LBListenersDescriptionOutput) GetKeys() map[ResourceKey][]string {
+
+	result := map[ResourceKey][]string{}
+	var arns []string
+	var certArns []string
+
+	for _, l := range o.GetAllListeners() {
+		arns = append(arns, *l.ListenerArn)
+		for _, c := range l.Certificates {
+			certArn := aws.StringValue(c.CertificateArn)
+			certArns = append(certArns, certArn)
+		}
+	}
+
+	result[ARNAttr] = arns
+	result[CertArnAttr] = certArns
+
+	if len(arns) > 0 {
+		result[RegionAttr] = []string{NewDefaultResourceIdentifier().InferRegionFromResourceARN(arns[0])}
+	}
+
+	return result
 }
 
 type LBDescriptionInput struct {
@@ -108,6 +153,30 @@ func (i *LBDescriptionInput) isMatching(l *elb.LoadBalancer) (bool, bool, error)
 type LBDescriptionOutput struct {
 	LoadBalancers     []*elb.LoadBalancer
 	OptionalListeners *LBListenersDescriptionOutput
+}
+
+// GetOutputID is describing the resources in the query in a unique way
+// e.g if there are 3 instances their id will be unique and always consistent
+// used to identify cache
+func (l *LBDescriptionOutput) GetOutputID() string {
+	arns := l.GetKeys()[ARNAttr]
+	sortedArns := sort.StringSlice(arns)
+	return strings.Join(sortedArns, ",")
+}
+
+func (l *LBDescriptionOutput) GetKeys() map[ResourceKey][]string {
+	result := map[ResourceKey][]string{}
+	var arns []string
+	for _, lb := range l.LoadBalancers {
+		arns = append(arns, aws.StringValue(lb.LoadBalancerArn))
+	}
+
+	result[ARNAttr] = arns
+
+	if len(arns) > 0 {
+		result[RegionAttr] = []string{NewDefaultResourceIdentifier().InferRegionFromResourceARN(arns[0])}
+	}
+	return result
 }
 
 func (d *AWSResourceDescriber) lbclient(region string) *elb.ELBV2 {

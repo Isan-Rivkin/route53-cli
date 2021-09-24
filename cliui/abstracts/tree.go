@@ -3,13 +3,29 @@ package abstracts
 import (
 	"io/ioutil"
 	"path/filepath"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
-type InteractiveTree struct {
-	RawTree *tview.TreeView
+func changeAsync(n *tview.TreeNode) {
+	go func() {
+		time.Sleep(time.Duration(3) * time.Second)
+		a := tview.NewTreeNode("A").
+			SetReference("A").
+			SetSelectable(true).
+			SetColor(tcell.ColorYellow).
+			SetExpanded(true)
+		b := tview.NewTreeNode("B").
+			SetReference("B").
+			SetSelectable(true).
+			SetColor(tcell.ColorYellow).
+			SetExpanded(true)
+
+		n.AddChild(a)
+		n.AddChild(b)
+	}()
 }
 
 func dummyElbRootTree() *tview.TreeView {
@@ -52,7 +68,23 @@ func dummyElbRootTree() *tview.TreeView {
 		SetRoot(root).
 		SetCurrentNode(root)
 
-		// A helper function which adds the files and directories of the given path
+	tree.SetSelectedFunc(func(node *tview.TreeNode) {
+		reference := node.GetReference()
+		if reference == nil {
+			return // Selecting the root node does nothing.
+		}
+		children := node.GetChildren()
+		if len(children) == 0 {
+			changeAsync(node)
+			// Load and show files in this directory.
+			//path := reference.(string)
+
+		} else {
+			// Collapse if visible, expand if collapsed.
+			node.SetExpanded(!node.IsExpanded())
+		}
+	})
+	// A helper function which adds the files and directories of the given path
 	// to the given target node.
 	// r53Record:
 	// -> click (elb)
@@ -80,6 +112,16 @@ func dummyElbRootTree() *tview.TreeView {
 	// 	}
 	// }
 
+	// tree.SetChangedFunc(func(node *tview.TreeNode) {
+	// 	fmt.Println("hovered a node!!!! ")
+	// 	reference := node.GetReference()
+	// 	if reference == nil {
+	// 		fmt.Println("Hover: root selected @@")
+	// 		return
+	// 	}
+	// 	val := reference.(string)
+	// 	fmt.Println("Hover: ", val)
+	// })
 	return tree
 }
 
@@ -130,15 +172,36 @@ func dummyFSTree() *tview.TreeView {
 	})
 	return tree
 }
-func NewInteractiveTree() *InteractiveTree {
-	// here a create dummy root tree for elb
-	// need to rethink now how this gonna work
-	// go run  main.go into -R -d 3 -r 'pro.similarweb.com'
-	// will display dummy tree, before implementation i need to think more about the tree and resource connectivity,
-	// also how do i represent all?
+
+type TreeHandler func(node *tview.TreeNode)
+
+type InteractiveTree struct {
+	RawTree *tview.TreeView
+}
+
+func NewInteractiveTree(root *tview.TreeNode, onSelect TreeHandler) *InteractiveTree {
+
 	//tree := dummyFSTree()
-	tree := dummyElbRootTree()
+	//tree := dummyElbRootTree()
+	tree := tview.NewTreeView().
+		SetRoot(root).
+		SetCurrentNode(root)
+
+	// when a user clicks on a node
+	tree.SetSelectedFunc(func(node *tview.TreeNode) {
+		onSelect(node)
+	})
+
 	return &InteractiveTree{
 		RawTree: tree,
 	}
 }
+
+// Initial:
+// - tree: root node
+// - tree: display reachable types
+// - tree: display expanded names
+// - info: display root info
+
+// OnSelectedNode:
+// - tree: get expandable resources

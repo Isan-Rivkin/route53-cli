@@ -14,6 +14,7 @@ const (
 )
 
 const (
+	R53RecordSetType     ResourceType = "r53.record"
 	ALBType              ResourceType = "lb.alb"
 	CLBType              ResourceType = "lb.clb"
 	ALBOrCLBType         ResourceType = "lb.alb_clb"
@@ -25,17 +26,37 @@ const (
 	ElasticBeansTalkType ResourceType = "elasticbeanstalk"
 	AcceleratorApiType   ResourceType = "awsglobalaccelerator"
 	TargetGroupType      ResourceType = "targetgroup"
+	HealthTargetsTGType  ResourceType = "tg.targets.health"
 	ELBListenersType     ResourceType = "listener"
 	EC2Type              ResourceType = "ec2"
 	LambdaType           ResourceType = "lambda"
 	RawIpType            ResourceType = "ip"
 	ACMType              ResourceType = "acm"
+	SecurityGroupType    ResourceType = "sg"
 )
 
-add resource types here to demonstarte connections 
+// reachable resources from source resource, i.e a graph of potential connectivity
 var AdjacentResources = map[ResourceType][]ResourceType{
-	ALBOrCLBType: {TargetGroupType, ELBListenersType},
-	ELBType:      {TargetGroupType, ELBListenersType},
+	R53RecordSetType:    {ALBType, CLBType, ELBType, ALBOrCLBType},
+	ALBType:             {TargetGroupType, ELBListenersType},
+	CLBType:             {TargetGroupType, ELBListenersType},
+	NLBType:             {TargetGroupType, ELBListenersType},
+	ELBType:             {TargetGroupType, ELBListenersType},
+	ALBOrCLBType:        {TargetGroupType, ELBListenersType},
+	TargetGroupType:     {HealthTargetsTGType},
+	HealthTargetsTGType: {EC2Type, LambdaType, RawIpType},
+	ELBListenersType:    {ACMType},
+	ACMType:             {},
+	EC2Type:             {},
+	LambdaType:          {},
+	RawIpType:           {},
+	// not implemented yet
+	SecurityGroupType:    {},
+	S3Type:               {},
+	VPCEndpointType:      {},
+	CloudFrontType:       {},
+	ElasticBeansTalkType: {},
+	AcceleratorApiType:   {},
 }
 
 var dnsTargetsToTypes = map[string]ResourceType{
@@ -47,6 +68,29 @@ var dnsTargetsToTypes = map[string]ResourceType{
 	CloudFrontDns:       CloudFrontType,
 	ElasticBeansTalkDns: ElasticBeansTalkType,
 	AcceleratorApiDns:   AcceleratorApiDns,
+}
+
+// check if a resource can be reached from another resource
+func IsReachableFrom(from ResourceType, to ResourceType) bool {
+	links, found := AdjacentResources[from]
+
+	if !found {
+		return false
+	}
+
+	for _, l := range links {
+		if l == to {
+			return true
+		}
+	}
+	return false
+}
+
+type AWSResourceIdentifier interface {
+	InferFromRecordSet(r *route53.ResourceRecordSet) ([]ResourceType, error)
+	InferTypeFromDNS(dns string) ([]ResourceType, error)
+	InferRegionFromDNS(r *route53.ResourceRecordSet) string
+	InferRegionFromResourceARN(arn string) string
 }
 
 type DefaultResourceIdentifier struct {

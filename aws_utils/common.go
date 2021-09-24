@@ -2,10 +2,15 @@ package aws_utils
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 )
+
+func IsSlice(v interface{}) bool {
+	return reflect.TypeOf(v).Kind() == reflect.Slice
+}
 
 func GetEnvSession(profile string) *session.Session {
 	opts := session.Options{

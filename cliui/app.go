@@ -23,7 +23,7 @@ type AppEvent struct {
 
 type InteractiveApp interface {
 	SetR53RecordsQueryResult(result *awsUtils.GetRecordAliasesResult)
-	AddResourceExpansionTree()
+	AddResourceExpansionTree(rootTxt string, childrenTxt []string)
 	Run() error
 }
 
@@ -43,7 +43,7 @@ func (app *R53App) Run() error {
 	return app.App.Render()
 }
 
-func (app *R53App) AddResourceExpansionTree() {
+func (app *R53App) AddResourceExpansionTree(rootTxt string, childrenTxt []string) {
 	// rootGrid.RawGrid().AddItem(abstracts.NewInteractiveTree().RawTree, 2, 0, 1, 3, 0, 0, true)
 	tree := abstracts.NewInteractiveTree().RawTree
 	input := abstracts.NewDefaultGridItem(tree)

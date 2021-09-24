@@ -2,6 +2,8 @@ package aws_utils
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -94,6 +96,7 @@ func (i *EC2InstanceDescInput) ToAWSInput() *ec2.DescribeInstancesInput {
 }
 
 type EC2InstanceDescOutput struct {
+	Region string
 	// use helper methods here
 	Output []*ec2.Reservation
 }
@@ -106,6 +109,33 @@ func (o EC2InstanceDescOutput) GetAllInstances() []*EC2InstanceWrapper {
 		}
 	}
 	return instances
+}
+
+// GetOutputID is describing the resources in the query in a unique way
+// e.g if there are 3 instances their id will be unique and always consistent
+// used to identify cache
+func (o *EC2InstanceDescOutput) GetOutputID() string {
+	arns := o.GetKeys()[ARNAttr]
+	sortedArns := sort.StringSlice(arns)
+	return strings.Join(sortedArns, ",")
+}
+
+func (o *EC2InstanceDescOutput) GetKeys() map[ResourceKey][]string {
+
+	result := map[ResourceKey][]string{}
+	var ids []string
+
+	for _, i := range o.GetAllInstances() {
+		ids = append(ids, i.ID())
+	}
+
+	result[ARNAttr] = ids
+
+	if len(ids) > 0 {
+		result[RegionAttr] = []string{o.Region}
+	}
+
+	return result
 }
 
 func (d *AWSResourceDescriber) ec2client(region string) *ec2.EC2 {
@@ -135,5 +165,5 @@ func (d *AWSResourceDescriber) describeEC2Instances(i *EC2InstanceDescInput) (*E
 		return nil, err
 	}
 
-	return &EC2InstanceDescOutput{Output: allOutput}, nil
+	return &EC2InstanceDescOutput{Output: allOutput, Region: i.Region}, nil
 }

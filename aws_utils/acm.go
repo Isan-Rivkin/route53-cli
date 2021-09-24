@@ -1,6 +1,8 @@
 package aws_utils
 
 import (
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -70,6 +72,26 @@ func (o *ACMDescOutput) IsAllDomainsValidated() bool {
 		}
 	}
 	return true
+}
+
+// GetOutputID is describing the resources in the query in a unique way
+// e.g if there are 3 instances their id will be unique and always consistent
+// used to identify cache
+func (o *ACMDescOutput) GetOutputID() string {
+	arns := o.GetKeys()[ARNAttr]
+	sortedArns := sort.StringSlice(arns)
+	return strings.Join(sortedArns, ",")
+}
+
+func (o *ACMDescOutput) GetKeys() map[ResourceKey][]string {
+
+	result := map[ResourceKey][]string{}
+
+	certArn := aws.StringValue(o.Output.Certificate.CertificateArn)
+	result[ARNAttr] = []string{certArn}
+	result[RegionAttr] = []string{NewDefaultResourceIdentifier().InferRegionFromResourceARN(certArn)}
+
+	return result
 }
 
 func (d *AWSResourceDescriber) acmclient(region string) *acm.ACM {
