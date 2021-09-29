@@ -70,6 +70,10 @@ var dnsTargetsToTypes = map[string]ResourceType{
 	AcceleratorApiDns:   AcceleratorApiDns,
 }
 
+func GetReachableResources(source ResourceType) []ResourceType {
+	return AdjacentResources[source]
+}
+
 // check if a resource can be reached from another resource
 func IsReachableFrom(from ResourceType, to ResourceType) bool {
 	links, found := AdjacentResources[from]

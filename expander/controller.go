@@ -1,7 +1,7 @@
 package expander
 
 import (
-	ui "r53/cliui"
+	ui "r53/cliui/v1"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -51,5 +51,5 @@ func (c *DefaultController) Start() StopChan {
 }
 
 func (c *DefaultController) SubmitResult(result *CommandResult, err error) {
-	
+
 }

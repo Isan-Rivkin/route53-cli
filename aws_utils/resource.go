@@ -8,6 +8,7 @@ const (
 	CertArnAttr ResourceKey = "certarn"
 	RegionAttr  ResourceKey = "region"
 	DNSAttr     ResourceKey = "dns"
+	WebURLAttr  ResourceKey = "url"
 )
 
 type ResourceType string

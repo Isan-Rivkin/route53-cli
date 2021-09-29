@@ -1,4 +1,4 @@
-package cliui
+package v1
 
 import (
 	"errors"

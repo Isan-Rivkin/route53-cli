@@ -48,8 +48,7 @@ func (c *R53ExpanderCmd) Execute(payload interface{}) {
 	var input interface{}
 
 	switch theType {
-	case awsu.ALBOrCLBType:
-	case awsu.ELBType:
+	case awsu.ELBType, awsu.ALBOrCLBType:
 		input = awsu.NewLBDescriptionInputFromDNS([]string{aliasRecord}, region)
 	default:
 		c.controller.SubmitResult(&e.CommandResult{

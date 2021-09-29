@@ -39,7 +39,6 @@ func (tp *TablePrompt) AddSelectionCallBack(onTableSelected OnTableSelectionFunc
 
 // AddHeaders add headers to the grid
 func (tp *TablePrompt) AddHeaders(headers []string) {
-
 	for i, headerText := range headers {
 		tp.table.SetCell(0, i, tview.NewTableCell(strings.ToUpper(headerText)).
 			SetSelectable(false).

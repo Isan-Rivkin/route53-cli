@@ -54,8 +54,7 @@ func (desc *AWSResourceDescriber) describe(rtype ResourceType, info interface{})
 	)
 
 	switch rtype {
-	case ALBOrCLBType:
-	case ELBType:
+	case ALBOrCLBType, ELBType:
 		input := info.(*LBDescriptionInput)
 		res, err := desc.describeLB(input)
 		keys = res.GetKeys()
@@ -105,7 +104,6 @@ func (desc *AWSResourceDescriber) describe(rtype ResourceType, info interface{})
 	if descErr != nil {
 		return nil, descErr
 	}
-
 	resultWrapper := NewResourceDescriptionResult(nil, info, output, rtype, keys, outId)
 	return resultWrapper, descErr
 }

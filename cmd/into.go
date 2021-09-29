@@ -18,12 +18,14 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/route53"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	awsu "r53/aws_utils"
-	ui "r53/cliui"
 	"r53/cliui/abstracts"
+	ui "r53/cliui/v1"
 	expander "r53/expander"
 )
 
@@ -41,6 +43,19 @@ to quickly create a Cobra application.`,
 		//dummy()
 		v1()
 	},
+}
+
+func GetRecordSetFromDNS(dns string, result []*awsu.GetRecordAliasesResult) *route53.ResourceRecordSet {
+	for _, res := range result {
+		if res.Records != nil {
+			for _, record := range res.Records {
+				if record.AliasTarget != nil && dns == aws.StringValue(record.AliasTarget.DNSName) {
+					return record
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func v1() {
@@ -72,19 +87,37 @@ func v1() {
 	// controller mock
 	go func() {
 		for {
-			i am stuck here testing different things. mostly confusion. 
-			what i did so far was to create an expander and try now to work top bottom 
-			and mimic some stupid controller loop here before i start heavy implementation 
-			so the idea here is to call the xpander and pass it to thet tree structure to see a root created. 
 			select {
 			case event, keepOpen := <-eventsController:
 				if keepOpen {
 					tableSelection := event.EventPayload.(*abstracts.TableSelectionResult)
 					rowCells := tableSelection.RowCells
-					potentialTarget := rowCells[tableSelection.ColSelected].Reference
+					r53RecordVal := rowCells[tableSelection.ColSelected].Reference
+					recordVal := r53RecordVal.(string)
 					// trigger tree and expansion
-					expander.Expand(expander)
-					app.AddResourceExpansionTree(rou)
+					record := GetRecordSetFromDNS(recordVal, result)
+					identifier := awsu.NewDefaultResourceIdentifier()
+					region := identifier.InferRegionFromDNS(record)
+					to, err := identifier.InferTypeFromDNS(recordVal)
+
+					if err != nil || len(to) != 1 {
+						panic(err)
+					}
+
+					resource := awsu.NewR53RecordSetDescriber(recordVal, region)
+					connectedResources, _ := expander.Expand(resource, to[0])
+					reachableResources := awsu.GetReachableResources(awsu.R53RecordSetType)
+					var displayResources []string
+					seen := map[string]bool{}
+
+					for _, r := range reachableResources {
+						if _, found := seen[string(r)]; !found {
+							displayResources = append(displayResources, string(r))
+							seen[string(r)] = true
+						}
+					}
+					app.AddResourceExpansionTree(string(awsu.R53RecordSetType), displayResources)
+					app.UpdateFocusTxtView(awsu.ALBOrCLBType, connectedResources)
 
 				} else {
 					fmt.Println("closing channel ")

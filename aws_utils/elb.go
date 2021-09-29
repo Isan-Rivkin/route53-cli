@@ -165,17 +165,32 @@ func (l *LBDescriptionOutput) GetOutputID() string {
 }
 
 func (l *LBDescriptionOutput) GetKeys() map[ResourceKey][]string {
+	identifier := NewDefaultResourceIdentifier()
 	result := map[ResourceKey][]string{}
 	var arns []string
+	var dnsAddrs []string
+	var webUrls []string
+
 	for _, lb := range l.LoadBalancers {
-		arns = append(arns, aws.StringValue(lb.LoadBalancerArn))
+
+		arn := aws.StringValue(lb.LoadBalancerArn)
+		dns := aws.StringValue(lb.DNSName)
+		arns = append(arns, arn)
+		dnsAddrs = append(dnsAddrs, dns)
+		region := identifier.InferRegionFromResourceARN(arn)
+		recSet := NewR53RecordSetFromDNS(dns, region)
+		webUrl, _ := GenerateWebURL(recSet)
+		webUrls = append(webUrls, webUrl)
 	}
 
 	result[ARNAttr] = arns
+	result[DNSAttr] = dnsAddrs
+	result[WebURLAttr] = webUrls
 
 	if len(arns) > 0 {
-		result[RegionAttr] = []string{NewDefaultResourceIdentifier().InferRegionFromResourceARN(arns[0])}
+		result[RegionAttr] = []string{identifier.InferRegionFromResourceARN(arns[0])}
 	}
+
 	return result
 }
 

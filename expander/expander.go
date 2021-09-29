@@ -11,6 +11,7 @@ type Expander interface {
 	Expand(from u.Resource, to u.ResourceType) ([]u.Resource, error)
 	IsExpanded(from u.Resource, to u.ResourceType) bool
 	IsExpandable(from u.Resource, to u.ResourceType) bool
+	GetPotentialExpansions(from u.ResourceType) []u.ResourceType
 }
 
 // responsible for expanding from resource to another one
@@ -104,4 +105,8 @@ func (e *SingleThreadedExpander) IsExpandable(from u.Resource, to u.ResourceType
 	}
 
 	return false
+}
+
+func (e *SingleThreadedExpander) GetPotentialExpansions(from u.ResourceType) []u.ResourceType {
+	return u.AdjacentResources[from]
 }
