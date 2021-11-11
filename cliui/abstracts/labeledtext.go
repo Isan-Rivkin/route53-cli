@@ -12,6 +12,7 @@ const (
 	RedTxtColor    = "red"
 	GreenTxtColor  = "green"
 	YellowTxtColor = "yellow"
+	PurpleTxtColor = "purple"
 )
 
 type LabeledTextRowInput struct {

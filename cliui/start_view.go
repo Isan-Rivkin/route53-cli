@@ -22,6 +22,7 @@ type StartPageOutput struct {
 	AWSProfile  string
 	SearchQuery string
 	Type        awsUtils.ResourceType
+	UITitle     string
 }
 
 func NewStartForm(input *StartPageInput, onSelection func(out *StartPageOutput)) *tview.Form {
@@ -47,7 +48,7 @@ func NewStartForm(input *StartPageInput, onSelection func(out *StartPageOutput))
 		startResource = option
 	})
 
-	form.AddInputField("Search Query", "", 200, nil, func(text string) {
+	form.AddInputField("Search Query", "", 100, nil, func(text string) {
 		searchQuery = text
 	})
 
@@ -58,6 +59,7 @@ func NewStartForm(input *StartPageInput, onSelection func(out *StartPageOutput))
 		for _, i := range input.Options {
 			if i.UITitle == startResource {
 				output.Type = i.Type
+				output.UITitle = i.UITitle
 			}
 		}
 		output.SearchQuery = searchQuery
@@ -69,34 +71,4 @@ func NewStartForm(input *StartPageInput, onSelection func(out *StartPageOutput))
 	})
 
 	return form
-}
-
-func NewStartView(input *StartPageInput, onSelection func(out *StartPageOutput)) tview.Primitive {
-	// Returns a new primitive which puts the provided primitive in the center and
-	// sets its size to the given width and height.
-	modal := func(p tview.Primitive, width, height int) tview.Primitive {
-		return tview.NewFlex().
-			AddItem(nil, 0, 1, false).
-			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-				AddItem(nil, 0, 1, false).
-				AddItem(p, height, 1, false).
-				AddItem(nil, 0, 1, false), width, 1, false).
-			AddItem(nil, 0, 1, false)
-	}
-
-	form := NewStartForm(input, onSelection)
-
-	return form
-	grid := tview.NewGrid().
-		SetRows(30).
-		SetColumns(30).
-		SetBorders(true).
-		AddItem(form, 0, 0, 1, 1, 0, 0, true)
-
-	return grid
-	return modal(form, 40, 10)
-	pages := tview.NewPages().
-		AddPage("start", modal(form, 40, 10), true, true)
-
-	return pages
 }
