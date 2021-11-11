@@ -22,11 +22,6 @@ type Handler interface {
 	Fetch(Conf, *session.Session, ResCb)
 }
 
-// Resource is a result of each handler
-type Resource interface {
-	Id() string
-}
-
 // Manages all Handlers for a specific group (i.e route53 is a group of many resources)
 type GroupManager interface {
 	Id() string

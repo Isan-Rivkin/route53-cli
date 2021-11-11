@@ -1,4 +1,4 @@
-package cliui
+package v1
 
 import (
 	"fmt"
@@ -12,6 +12,7 @@ func (app *R53App) RenderHostedZoneTextView(resultTableOut *awsUtils.R53ResultTa
 
 	// name
 	header := abstracts.NewLabeledText(&abstracts.LabeledTextViewInput{
+		ViewTitle: "Hosted Zone Info",
 		Rows: []*abstracts.LabeledTextRowInput{
 			{
 				LabelTxt:   awsUtils.HZNameCol,

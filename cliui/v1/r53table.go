@@ -1,4 +1,4 @@
-package cliui
+package v1
 
 import (
 	"fmt"
@@ -8,9 +8,17 @@ import (
 	"github.com/rivo/tview"
 )
 
+func (app *R53App) OnR53TableSelection(selection *abstracts.TableSelectionResult) {
+
+	app.EventsController <- &AppEvent{
+		Type:         R53TableSelection,
+		EventPayload: selection,
+	}
+}
+
 func (app *R53App) SetR53RecordsQueryResult(result *awsUtils.GetRecordAliasesResult) {
 	// get records gui table
-	recordsTable, output := app.RenderR53RecordsTable(result, nil)
+	recordsTable, output := app.RenderR53RecordsTable(result, app.OnR53TableSelection)
 	// get hosted zone text view
 	hostedZoneLabeled := app.RenderHostedZoneTextView(output)
 	hzTextView := hostedZoneLabeled.Render()
@@ -22,6 +30,9 @@ func (app *R53App) RenderR53RecordsTable(result *awsUtils.GetRecordAliasesResult
 
 	tablePrompt.AddSelectionCallBack(onSelected)
 
+	// here web url is truncated awsUtils.WebURLCol since it's too big for the ui col
+	// TODO:: adding another row will not help for url since it will expend it's width for the whole table
+	// maybe create multiple tables with rows under it w/e
 	header := []string{awsUtils.NumCol, awsUtils.RecordCol, awsUtils.TypeCol, awsUtils.TTLCol, awsUtils.CountryCol, awsUtils.AliasCol, awsUtils.ResourcesCol}
 
 	output := result.GetR53AsTableOutput(&awsUtils.R53ResultTableInput{
@@ -33,17 +44,36 @@ func (app *R53App) RenderR53RecordsTable(result *awsUtils.GetRecordAliasesResult
 	tablePrompt.AddHeaders(append([]string{"#"}, nonEmptyHeaders...))
 
 	currentRow := 0
+
+	// check if alias column exist for reference value
+	aliasHeaderExist := false
+	for _, h := range nonEmptyHeaders {
+		if h == awsUtils.AliasCol {
+			aliasHeaderExist = true
+			break
+		}
+	}
+	// populate columns
 	for _, row := range output.Outputs {
 
+		cellRefValue := ""
+
+		if aliasHeaderExist {
+			cellRefValue = row[awsUtils.AliasCol]
+		}
+
 		// add the # col for row number
-		tablePrompt.AddRow(currentRow+1, 0, fmt.Sprintf("%d", currentRow+1))
+		// populate cell
+		tablePrompt.AddRow(currentRow+1, 0, fmt.Sprintf("%d", currentRow+1), cellRefValue)
 
 		// add all the cols in the result
 		for headerNum, headerName := range nonEmptyHeaders {
-			tablePrompt.AddRow(currentRow+1, headerNum+1, row[headerName])
+			// populate cell
+			tablePrompt.AddRow(currentRow+1, headerNum+1, row[headerName], cellRefValue)
 		}
 
 		// if web url exist create additional row below with the result
+		// !!! this will not work because the column width of url will be the size of the web url so display will still be the same with additional empty row
 		// if url, found := row[awsUtils.WebURLCol]; found {
 		// 	tablePrompt.AddInfoRow(currentRow+2, 0, url)
 		// 	currentRow++
@@ -56,7 +86,7 @@ func (app *R53App) RenderR53RecordsTable(result *awsUtils.GetRecordAliasesResult
 }
 
 // SelectR53RecordFromList is return selected route53 record from the list by prompt question
-func SelectR53RecordFromList(result *awsUtils.GetRecordAliasesResult) (string, error) {
+func DEPRECATEDSelectR53RecordFromList(result *awsUtils.GetRecordAliasesResult) (string, error) {
 
 	header := []string{awsUtils.NumCol, awsUtils.RecordCol, awsUtils.TypeCol, awsUtils.TTLCol, awsUtils.CountryCol, awsUtils.AliasCol, awsUtils.ResourcesCol}
 

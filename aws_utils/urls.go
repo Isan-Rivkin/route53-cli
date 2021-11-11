@@ -43,6 +43,10 @@ func CheckRoutableAWSTarget(r *route53.ResourceRecordSet) (string, bool) {
 	}
 	dns := *r.AliasTarget.DNSName
 
+	return checkRoutableAWSTargetDNS(dns)
+}
+
+func checkRoutableAWSTargetDNS(dns string) (string, bool) {
 	for _, st := range SupportedTarget {
 		if strings.Contains(dns, st) {
 			return st, true
@@ -63,13 +67,15 @@ func GenerateWebURL(r *route53.ResourceRecordSet) (string, error) {
 	return "", e
 }
 
-// https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#LoadBalancers:search=some-alb-name;sort=loadBalancerName
-func GetLBWebURL(dnsIdentifier string, r *route53.ResourceRecordSet) string {
+func GetRegionFromLBDNSName(dnsIdentifier string, r *route53.ResourceRecordSet) string {
 	record := *r.AliasTarget.DNSName
 	record = strings.TrimRight(record, ".")
 
-	region := *r.Region
-	searchQuery := record
+	region := "us-east-1"
+	if r != nil && r.Region != nil {
+		region = *r.Region
+	}
+
 	// parse region
 	splitted := strings.Split(record, ".")
 
@@ -86,6 +92,18 @@ func GetLBWebURL(dnsIdentifier string, r *route53.ResourceRecordSet) string {
 			region = splitted[len(splitted)-3]
 		}
 	}
+	return region
+}
+
+// https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#LoadBalancers:search=some-alb-name;sort=loadBalancerName
+func GetLBWebURL(dnsIdentifier string, r *route53.ResourceRecordSet) string {
+	record := *r.AliasTarget.DNSName
+	record = strings.TrimRight(record, ".")
+
+	searchQuery := record
+	// parse region
+	region := GetRegionFromLBDNSName(dnsIdentifier, r)
+
 	if strings.HasPrefix(searchQuery, "dualstack.") {
 		searchQuery = strings.TrimLeft(searchQuery, "dualstack.")
 	}

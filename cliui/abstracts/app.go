@@ -19,11 +19,14 @@ func DefaultOpts() *AppOptions {
 
 type App interface {
 	SetRootGrid(rootGrid *tview.Grid)
+	GetRootGrid() *tview.Grid
+	AppendGridItem(gridItem *GridItem)
 	Render() error
 }
 
 type DefaultApp struct {
-	app *tview.Application
+	app      *tview.Application
+	rootGrid *tview.Grid
 }
 
 func NewApp() App {
@@ -42,7 +45,7 @@ func getDummyTable() *tview.Table {
 	for rowIdx := 0; rowIdx < 20; rowIdx++ {
 
 		for colIdx, c := range cols {
-			table.AddRow(rowIdx+1, colIdx, fmt.Sprintf("dummy=%s,%d,%d", c, rowIdx, colIdx))
+			table.AddRow(rowIdx+1, colIdx, fmt.Sprintf("dummy=%s,%d,%d", c, rowIdx, colIdx), "")
 		}
 	}
 
@@ -97,7 +100,7 @@ func (a *DefaultApp) renderSimpleGrid() *tview.Grid {
 	for rowIdx := 0; rowIdx < 250; rowIdx++ {
 
 		for colIdx, c := range cols {
-			table.AddRow(rowIdx+1, colIdx, fmt.Sprintf("val=%s,%d,%d", c, rowIdx, colIdx))
+			table.AddRow(rowIdx+1, colIdx, fmt.Sprintf("val=%s,%d,%d", c, rowIdx, colIdx), "")
 		}
 	}
 	table.AddSelectionCallBack(func(tsr *TableSelectionResult) {
@@ -118,8 +121,25 @@ func (a *DefaultApp) renderSimpleGrid() *tview.Grid {
 	return grid
 }
 
+func (a *DefaultApp) GetRootGrid() *tview.Grid {
+	return a.rootGrid
+}
+
 func (a *DefaultApp) SetRootGrid(rootGrid *tview.Grid) {
+	a.rootGrid = rootGrid
 	a.app.SetRoot(rootGrid, true)
+}
+
+func (a *DefaultApp) AppendGridItem(gridItem *GridItem) {
+	a.ReRenderUI(func() {
+		a.GetRootGrid().AddItem(gridItem.ConvertToAddItemInput())
+	})
+}
+
+func (a *DefaultApp) ReRenderUI(update func()) {
+	a.app.QueueUpdateDraw(func() {
+		update()
+	})
 }
 
 func (a *DefaultApp) Render() error {

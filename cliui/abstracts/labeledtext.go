@@ -12,6 +12,7 @@ const (
 	RedTxtColor    = "red"
 	GreenTxtColor  = "green"
 	YellowTxtColor = "yellow"
+	PurpleTxtColor = "purple"
 )
 
 type LabeledTextRowInput struct {
@@ -22,7 +23,8 @@ type LabeledTextRowInput struct {
 }
 
 type LabeledTextViewInput struct {
-	Rows []*LabeledTextRowInput
+	ViewTitle string
+	Rows      []*LabeledTextRowInput
 }
 
 type LabeledText struct {
@@ -46,7 +48,7 @@ func (t *LabeledText) Render() *tview.TextView {
 
 	txt := ""
 
-	textView.SetMaxLines(len(t.input.Rows))
+	textView.SetMaxLines(len(t.input.Rows) + 1)
 
 	for _, row := range t.input.Rows {
 
@@ -56,7 +58,7 @@ func (t *LabeledText) Render() *tview.TextView {
 	}
 
 	textView.SetText(txt)
-	textView.SetTitle("Hosted Zone Info")
+	textView.SetTitle(t.input.ViewTitle)
 	textView.SetBorder(true)
 
 	return textView
