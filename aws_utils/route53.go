@@ -231,7 +231,7 @@ func (r53m *Route53Manager) getRecordsRecursive(maxDepth int, recordName string,
 		result, err := r53m.getRecordsRecursive(maxDepth-1, a, skipNSVerification, checkedRecord)
 
 		if err != nil {
-			l.WithError(err).Warn("stopping recurse record set on alias no results")
+			l.Debugf("stopping recurse record set on alias no results %s", err.Error())
 			continue
 		}
 
