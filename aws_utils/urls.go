@@ -6,6 +6,7 @@ import (
 
 	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
 	route53 "github.com/aws/aws-sdk-go/service/route53"
 )
 
@@ -41,6 +42,7 @@ func CheckRoutableAWSTarget(r *route53.ResourceRecordSet) (string, bool) {
 	if r.AliasTarget == nil || r.AliasTarget.DNSName == nil {
 		return "", false
 	}
+
 	dns := *r.AliasTarget.DNSName
 
 	for _, st := range SupportedTarget {
@@ -65,10 +67,10 @@ func GenerateWebURL(r *route53.ResourceRecordSet) (string, error) {
 
 // https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#LoadBalancers:search=some-alb-name;sort=loadBalancerName
 func GetLBWebURL(dnsIdentifier string, r *route53.ResourceRecordSet) string {
-	record := *r.AliasTarget.DNSName
+	record := aws.StringValue(r.AliasTarget.DNSName)
 	record = strings.TrimRight(record, ".")
 
-	region := *r.Region
+	region := aws.StringValue(r.Region)
 	searchQuery := record
 	// parse region
 	splitted := strings.Split(record, ".")

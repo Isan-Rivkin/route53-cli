@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	AppVersion = "0.3.0"
+	AppVersion = "0.3.1"
 )
 
 var cfgFile string
@@ -87,7 +87,8 @@ func ExecuteR53() {
 
 	depth := *recusiveSearchMaxDepth
 	if !*recursiveSearch {
-		depth = 1
+		// default recurse 3 depth max
+		depth = 3
 	}
 
 	results, err := api.GetRecordSetAliasesRecursive(depth, recordInput, skipNSVerification, nil)
