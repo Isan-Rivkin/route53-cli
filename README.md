@@ -27,15 +27,15 @@ Go to browser -> AWS console -> login -> Route53 -> find the hosted zone -> find
 
 - The CLI will use the default AWS login methods and query the Route53 API in a smart way to find the record. 
 - By default the nameservers will be verified against the real world via Dig implementation (turn off via `--skip-ns`).
-- By using `-R` the query will continue recursivly and expand all the records until the "leaf".
-- If the record value is an AWS resource it will output the URL to AWS console for quick access.
+- Search recursivly and expand all the records until the "leaf".
+- Direct Web URL to the resource from the terminal.
 
 ## With `route53-cli`:
 
 **Input**
 
 ```bash
-r53 -R -r 'app.foo.goo.website.com'
+r53 -r 'app.foo.goo.website.com'
 ``` 
 
 **Output**

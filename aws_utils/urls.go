@@ -44,7 +44,7 @@ func CheckRoutableAWSTarget(r *route53.ResourceRecordSet) (string, bool) {
 	}
 
 	dns := *r.AliasTarget.DNSName
-	fmt.Println(dns)
+
 	for _, st := range SupportedTarget {
 		if strings.Contains(dns, st) {
 			return st, true
