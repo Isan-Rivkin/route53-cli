@@ -53,6 +53,19 @@ func CheckRoutableAWSTarget(r *route53.ResourceRecordSet) (string, bool) {
 	return "", false
 }
 
+// id is typicall /hostedzone/1234LZW9ITZ26T and we need only 1234LZW9ITZ26T
+func GenerateRoute53HostedZoneWebURL(hzId string) string {
+	splittedId := strings.Split(hzId, "/")
+
+	if len(splittedId) < 1 {
+		return ""
+	}
+
+	id := splittedId[len(splittedId)-1]
+	r53Url := fmt.Sprintf("https://console.aws.amazon.com/route53/v2/hostedzones#ListRecordSets/%s", id)
+	return r53Url
+}
+
 func GenerateWebURL(r *route53.ResourceRecordSet) (string, error) {
 	e := errors.New("ErrNotRoutable")
 	if dnsType, routable := CheckRoutableAWSTarget(r); routable {

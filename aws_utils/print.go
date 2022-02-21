@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/jedib0t/go-pretty/v6/table"
 	log "github.com/sirupsen/logrus"
 )
@@ -84,8 +85,13 @@ func (r *GetRecordAliasesResult) printHostedzoneTable(opts *PrintOptions) {
 
 	t := table.NewWriter()
 
+	hzIdDisplay := aws.StringValue(r.HostedZone.Id)
+	r53Url := GenerateRoute53HostedZoneWebURL(hzIdDisplay)
+	if r53Url != "" {
+		hzIdDisplay = fmt.Sprintf("%s\n\n%s\n", hzIdDisplay, r53Url)
+	}
 	t.AppendHeader(table.Row{"Hosted Zone", "Id", "Total records", "Private"}, rowConfigAutoMerge)
-	t.AppendRow(table.Row{*r.HostedZone.Name, *r.HostedZone.Id, *r.HostedZone.ResourceRecordSetCount, *r.HostedZone.Config.PrivateZone}, rowConfigAutoMerge)
+	t.AppendRow(table.Row{*r.HostedZone.Name, hzIdDisplay, *r.HostedZone.ResourceRecordSetCount, *r.HostedZone.Config.PrivateZone}, rowConfigAutoMerge)
 	t.SetColumnConfigs([]table.ColumnConfig{
 		{Number: 1, AutoMerge: true},
 		{Number: 2, AutoMerge: true},
