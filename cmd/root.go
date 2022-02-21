@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	AppVersion = "0.3.1"
+	AppVersion = "0.3.2"
 )
 
 var cfgFile string
