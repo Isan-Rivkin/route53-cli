@@ -115,61 +115,6 @@ func ExecuteR53() {
 
 }
 
-// func ExecuteR532() {
-
-// 	if debug {
-// 		log.SetLevel(log.DebugLevel)
-// 	}
-
-// 	if recordInput == "" {
-// 		log.Error("query must not be empty use -r flag or --help")
-// 		return
-// 	}
-
-// 	log.WithField("profile", awsProfile).Info("using aws environment session")
-
-// 	api := awsu.NewRoute53Api(awsProfile)
-
-// 	if skipNSVerification {
-// 		log.Warn("skipping nameserver verification, possibly inccorect result, not recomended.")
-// 	}
-
-// 	depth := *recusiveSearchMaxDepth
-// 	if !*recursiveSearch {
-// 		// default recurse 3 depth max
-// 		depth = 3
-// 	}
-
-// 	results, err := api.GetRecordSetAliasesRecursive(depth, recordInput, skipNSVerification, nil)
-
-// 	if err != nil {
-// 		log.WithError(err).Error("failed")
-// 		return
-// 	}
-
-// 	if outputJson || outputFile != "" {
-// 		res, err := sdk.ToJSONOutput(results, true)
-// 		if err != nil {
-// 			log.WithError(err).Error("failed")
-// 			return
-// 		}
-
-// 		if outputFile != "" {
-// 			if err = ioutil.WriteFile(outputFile, res, 0644); err != nil {
-// 				log.WithError(err).Error("failed writting result to output file")
-// 				return
-// 			}
-// 		} else {
-// 			fmt.Println(string(res))
-// 		}
-
-// 	} else {
-// 		for _, r := range results {
-// 			r.PrintTable(&awsu.PrintOptions{WebURL: webUrl})
-// 		}
-// 	}
-// }
-
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
