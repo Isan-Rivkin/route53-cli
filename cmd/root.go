@@ -17,8 +17,11 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
-	awsu "r53/aws_utils"
+
+	awsu "github.com/isan-rivkin/route53-cli/aws_utils"
+	"github.com/isan-rivkin/route53-cli/sdk"
 
 	v "github.com/isan-rivkin/cliversioner"
 	homedir "github.com/mitchellh/go-homedir"
@@ -28,14 +31,16 @@ import (
 )
 
 const (
-	AppVersion = "0.3.2"
+	AppVersion = "0.4.1"
 )
 
 var cfgFile string
 var recordInput string
 var awsProfile string
+var outputFile string
 var recusiveSearchMaxDepth *int
 var recursiveSearch *bool
+var outputJson bool
 var debug bool
 var webUrl bool
 var skipNSVerification bool
@@ -50,6 +55,7 @@ r53 will use your default AWS credentials`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ExecuteR53()
 		VersionCheck()
+
 	},
 }
 
@@ -65,42 +71,48 @@ func VersionCheck() {
 	}
 
 }
-
 func ExecuteR53() {
-
-	if debug {
-		log.SetLevel(log.DebugLevel)
-	}
-
-	if recordInput == "" {
-		log.Error("query must not be empty use -r flag or --help")
-		return
-	}
-
-	log.WithField("profile", awsProfile).Info("using aws environment session")
-
-	api := awsu.NewRoute53Api(awsProfile)
-
-	if skipNSVerification {
-		log.Warn("skipping nameserver verification, possibly inccorect result, not recomended.")
-	}
-
 	depth := *recusiveSearchMaxDepth
 	if !*recursiveSearch {
 		// default recurse 3 depth max
 		depth = 3
 	}
 
-	results, err := api.GetRecordSetAliasesRecursive(depth, recordInput, skipNSVerification, nil)
+	input, err := sdk.NewInput(recordInput, awsProfile, debug, false, skipNSVerification, true, depth)
 
 	if err != nil {
-		log.WithError(err).Error("failed")
+		log.WithError(err).Error("failed creating input")
 		return
 	}
 
-	for _, r := range results {
-		r.PrintTable(&awsu.PrintOptions{WebURL: webUrl})
+	results, err := sdk.SearchR53(input)
+
+	if err != nil {
+		log.WithError(err).Error("failed searching")
+		return
 	}
+	if outputJson || outputFile != "" {
+		res, err := sdk.ToJSONOutput(results, true)
+		if err != nil {
+			log.WithError(err).Error("failed converting output to json")
+			return
+		}
+
+		if outputFile != "" {
+			if err = ioutil.WriteFile(outputFile, res, 0644); err != nil {
+				log.WithError(err).Error("failed writting result to output file")
+				return
+			}
+		} else {
+			fmt.Println(string(res))
+		}
+
+	} else {
+		for _, r := range results {
+			r.PrintTable(&awsu.PrintOptions{WebURL: webUrl})
+		}
+	}
+
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -132,7 +144,9 @@ func init() {
 	maxDepth := 3
 	rootCmd.PersistentFlags().IntVarP(&maxDepth, "max-depth", "d", maxDepth, "if -R is used then specifies when to stop recursive search depth")
 	recusiveSearchMaxDepth = &maxDepth
-
+	// output as json result
+	rootCmd.PersistentFlags().BoolVar(&outputJson, "output-json", false, "output the result as a json object")
+	rootCmd.PersistentFlags().StringVarP(&outputFile, "output-file", "f", "", "save output as json to file path")
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")

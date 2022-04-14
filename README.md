@@ -29,6 +29,7 @@ Go to browser -> AWS console -> login -> Route53 -> find the hosted zone -> find
 - By default the nameservers will be verified against the real world via Dig implementation (turn off via `--skip-ns`).
 - Search recursivly and expand all the records until the "leaf".
 - Direct Web URL to the resource from the terminal.
+- SDK support for programatic access and JSON output.
 
 ## With `route53-cli`:
 
@@ -60,6 +61,20 @@ r53 -r 'app.foo.goo.website.com'
 | 4 | r-re2.website.com.    | lb2.elb.amazonaws.com  | https://console.aws.amazon.com/alb-2 | A       |
 +---+-----------------------|------------------------|------------------------------------------------+
 
+```
+
+## Programatic Access 
+
+Use the output with another program:
+
+```bash
+r53 -r 'my.domain.com' --output-json --output-file output.json
+```
+
+Use the code in SDK mode (another `go` project): 
+
+```go
+ 
 ```
 
 # Install 
