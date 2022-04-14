@@ -74,6 +74,20 @@ r53 -r 'my.domain.com' --output-json --output-file output.json
 Use the code in SDK mode (another `go` project): 
 
 ```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/isan-rivkin/route53-cli/sdk"
+)
+
+func main() {
+	input, _ := sdk.NewInput("my.company.com", "my-aws-conf-profile", false, false, false, true, 3)
+	result, _ := sdk.SearchR53(input)
+	jsonOut, _ := sdk.ToJSONOutput(result, true)
+	fmt.Println(string(jsonOut))
+}
  
 ```
 
