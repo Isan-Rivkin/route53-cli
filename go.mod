@@ -1,4 +1,4 @@
-module r53
+module github.com/isan-rivkin/route53-cli
 
 go 1.14
 

@@ -1,9 +1,10 @@
 package aws_utils_test
 
 import (
-	awsu "r53/aws_utils"
 	"strings"
 	"testing"
+
+	awsu "github.com/isan-rivkin/route53-cli/aws_utils"
 )
 
 func TestStripRecord(t *testing.T) {

@@ -1,8 +1,9 @@
 package aws_utils_test
 
 import (
-	awsu "r53/aws_utils"
 	"testing"
+
+	awsu "github.com/isan-rivkin/route53-cli/aws_utils"
 
 	route53 "github.com/aws/aws-sdk-go/service/route53"
 	"github.com/stretchr/testify/assert"

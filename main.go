@@ -17,7 +17,7 @@ limitations under the License.
 package main
 
 import (
-	"r53/cmd"
+	"github.com/isan-rivkin/route53-cli/cmd"
 )
 
 func main() {

@@ -7,7 +7,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/jedib0t/go-pretty/v6/table"
-	log "github.com/sirupsen/logrus"
 )
 
 type PrintOptions struct {
@@ -23,50 +22,24 @@ func (r *GetRecordAliasesResult) printRecordsTable(opts *PrintOptions) {
 	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
 	t := table.NewWriter()
 	t.AppendHeader(table.Row{"Record", "Type", "TTL", "Country", "Alias", "Resources"}, rowConfigAutoMerge)
-	for _, recSet := range r.Records {
+	accessors := r.GetRecordsAccessors()
 
-		if recSet.Region == nil {
-			recSet.Region = &r.Region
-		}
-
-		countryCode := ""
-		if recSet.GeoLocation != nil && recSet.GeoLocation.SubdivisionCode != nil {
-			countryCode = *recSet.GeoLocation.SubdivisionCode
-		}
-		dnsName := ""
-		if recSet.AliasTarget != nil && recSet.AliasTarget.DNSName != nil {
-			dnsName = *recSet.AliasTarget.DNSName
-		}
-		ttl := int64(0)
-		if recSet.TTL != nil {
-			ttl = *recSet.TTL
-		}
-		resourcesRow := ""
-		for _, resources := range recSet.ResourceRecords {
-			if resources != nil {
-				resourcesRow += *resources.Value + "\n"
-			}
-		}
-		recordStr := ""
-		if recSet.Name != nil {
-			recordStr = *recSet.Name
-			if strings.HasPrefix(recordStr, WildCard) {
-				recordStr = strings.Replace(recordStr, WildCard, "*", 1)
-			}
-		}
-		// check if web url should be added
+	for _, rec := range accessors {
+		countryCode, _ := rec.GetCountryCode()
+		dnsName, _ := rec.GetAliasValue()
+		ttl, _ := rec.GetTTL()
+		resources, _ := rec.GetResources()
+		resourcesRow := strings.Join(resources, "\n")
+		recordStr, _ := rec.GetRecord()
 		if opts != nil && opts.WebURL {
-
-			url, err := GenerateWebURL(recSet)
-			if err == nil {
-				dnsName += fmt.Sprintf("\n\n%s\n", url)
-			} else {
-				log.WithField("record", *recSet.Name).WithError(err).Debug("failed getting web url for record")
-			}
+			url, _ := rec.GetWebURL()
+			dnsName += fmt.Sprintf("\n\n%s\n", url)
 		}
-		t.AppendRow(table.Row{recordStr, *recSet.Type, ttl, countryCode, dnsName, resourcesRow}, rowConfigAutoMerge)
+		recType, _ := rec.GetRecordType()
+		t.AppendRow(table.Row{recordStr, recType, ttl, countryCode, dnsName, resourcesRow}, rowConfigAutoMerge)
 		t.AppendSeparator()
 	}
+
 	t.SetAutoIndex(true)
 	t.SetColumnConfigs([]table.ColumnConfig{
 		{Number: 1, AutoMerge: true},
@@ -80,6 +53,7 @@ func (r *GetRecordAliasesResult) printRecordsTable(opts *PrintOptions) {
 	t.SetOutputMirror(os.Stdout)
 	t.Render()
 }
+
 func (r *GetRecordAliasesResult) printHostedzoneTable(opts *PrintOptions) {
 	rowConfigAutoMerge := table.RowConfig{AutoMerge: true}
 

@@ -5,6 +5,8 @@ import (
 	route53 "github.com/aws/aws-sdk-go/service/route53"
 )
 
+type DNSRecordType string
+
 const (
 	WildCard string = "\\052"
 )

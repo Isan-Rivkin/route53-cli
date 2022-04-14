@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	dnsu "r53/dnsu"
 	"strings"
+
+	dnsu "github.com/isan-rivkin/route53-cli/dnsu"
 
 	"github.com/aws/aws-sdk-go/aws"
 	route53 "github.com/aws/aws-sdk-go/service/route53"

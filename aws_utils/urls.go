@@ -40,6 +40,7 @@ var (
 // checks if the value of a route53 record is an alias to a routable AWS resource, if true will return the resource type from the list
 func CheckRoutableAWSTarget(r *route53.ResourceRecordSet) (string, bool) {
 	if r.AliasTarget == nil || r.AliasTarget.DNSName == nil {
+
 		return "", false
 	}
 
@@ -50,6 +51,7 @@ func CheckRoutableAWSTarget(r *route53.ResourceRecordSet) (string, bool) {
 			return st, true
 		}
 	}
+
 	return "", false
 }
 
