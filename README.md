@@ -1,5 +1,7 @@
 # Route53 Query 
 
+![image info](./docs/logo-s.png)
+
 Move fast with custom CLI for Route53. 
 
 Get info about your Route53 records from the Command line - quickly!
