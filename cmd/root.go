@@ -60,17 +60,22 @@ r53 will use your default AWS credentials`,
 }
 
 func VersionCheck() {
-
+	var err error
 	optoutVar := "R53_VERSION_CHECK"
-	i := v.NewInput("route53-cli", "https://looperly.co", AppVersion, &optoutVar)
-	if out, err := v.CheckVersion(i); err == nil {
-		if out.Outdated {
-			m := fmt.Sprintf("%s is not latest, %s, upgrade to %s", out.CurrentVersion, out.Message, out.LatestVersion)
-			log.Warn(m)
-		}
+	i := v.NewInput("route53-cli", "https://github.com/isan-rivkin", AppVersion, &optoutVar)
+	out, err := v.CheckVersion(i)
+
+	if err != nil || out == nil {
+		log.WithError(err).Debug("failed checking latest version from github.com")
+		return
 	}
 
+	if out.Outdated {
+		m := fmt.Sprintf("%s is not latest, %s, upgrade to %s", out.CurrentVersion, out.Message, out.LatestVersion)
+		log.Warn(m)
+	}
 }
+
 func ExecuteR53() {
 	depth := *recusiveSearchMaxDepth
 	if !*recursiveSearch {
