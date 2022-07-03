@@ -1,5 +1,10 @@
 # Route53 Query 
 
+# PLEASE USE SURF (INCLUDES R53) CLI FOR A MUCH RICHER EXPERIENCE: 
+
+Visit [surf cli repo](https://github.com/Isan-Rivkin/surf). 
+
+
 ![image info](./docs/logo-s.png)
 
 Move fast with custom CLI for Route53. 
